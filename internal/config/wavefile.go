@@ -95,3 +95,14 @@ func DiscoverWavefile(startDir string) (string, error) {
 		dir = parent
 	}
 }
+
+// ReadWavefileRaw reads and returns the raw bytes of a Wavefile at path.
+// This is used by the rules engine which needs raw TOML content for
+// structural checks (before TOML parsing).
+func ReadWavefileRaw(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading Wavefile: %w", err)
+	}
+	return data, nil
+}
