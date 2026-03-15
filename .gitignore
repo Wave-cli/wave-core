@@ -1,0 +1,40 @@
+# Binaries
+wave-core
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+*.out
+
+# Coverage
+coverage.out
+coverage.html
+
+# Build output
+/dist/
+/bin/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go workspace
+go.work
+go.work.sum
+
+# Environment
+.env
+.env.local
+
+# Test artifacts
+testdata/plugins/echo/echo
