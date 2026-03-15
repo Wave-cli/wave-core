@@ -16,6 +16,8 @@ import (
 	"github.com/wave-cli/wave-core/internal/errors"
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
 	"github.com/wave-cli/wave-core/internal/runner"
+	"github.com/wave-cli/wave-core/internal/schema"
+	"github.com/wave-cli/wave-core/internal/validate"
 )
 
 // getProjectRoot finds the project root by walking up to find go.mod.
@@ -620,5 +622,360 @@ region = "us-east-1"
 	}
 	if wf.Sections["deploy"]["target"] != "aws" {
 		t.Error("deploy section missing")
+	}
+}
+
+// =============================================================================
+// E2E Test: wave-flow Plugin Integration
+// =============================================================================
+
+// buildFlowPlugin compiles the wave-flow plugin and returns the binary path.
+func buildFlowPlugin(t *testing.T) string {
+	t.Helper()
+	projectRoot := getProjectRoot(t)
+	// wave-flow lives alongside wave-core
+	flowSrc := filepath.Join(filepath.Dir(projectRoot), "wave-flow")
+
+	if _, err := os.Stat(filepath.Join(flowSrc, "go.mod")); os.IsNotExist(err) {
+		t.Skip("wave-flow source not found at " + flowSrc)
+	}
+
+	binDir := t.TempDir()
+	binName := "flow"
+	if runtime.GOOS == "windows" {
+		binName = "flow.exe"
+	}
+	binPath := filepath.Join(binDir, binName)
+
+	cmd := exec.Command("go", "build", "-o", binPath, ".")
+	cmd.Dir = flowSrc
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Failed to build flow plugin: %v\n%s", err, out)
+	}
+	return binPath
+}
+
+// setupFlowPlugin creates a fake wave home with the flow plugin installed,
+// including its Waveplugin and Waveschema files.
+func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsDir string) {
+	t.Helper()
+	homeDir = t.TempDir()
+
+	gc, err := bootstrap.Ensure(homeDir)
+	if err != nil {
+		t.Fatalf("bootstrap.Ensure failed: %v", err)
+	}
+
+	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
+
+	// Install flow plugin: wave-cli/flow v0.1.0
+	versionDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v0.1.0")
+	binDir := filepath.Join(versionDir, "bin")
+	os.MkdirAll(binDir, 0755)
+
+	// Copy flow binary
+	data, _ := os.ReadFile(flowBinPath)
+	destBin := filepath.Join(binDir, "flow")
+	os.WriteFile(destBin, data, 0755)
+
+	// Copy Waveplugin from flow source
+	projectRoot := getProjectRoot(t)
+	flowSrc := filepath.Join(filepath.Dir(projectRoot), "wave-flow")
+
+	wpData, _ := os.ReadFile(filepath.Join(flowSrc, "Waveplugin"))
+	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), wpData, 0644)
+
+	// Copy Waveschema
+	schemaData, _ := os.ReadFile(filepath.Join(flowSrc, "Waveschema"))
+	os.WriteFile(filepath.Join(versionDir, "Waveschema"), schemaData, 0644)
+
+	// Create current symlink
+	currentLink := filepath.Join(pluginsDir, "wave-cli", "flow", "current")
+	os.Symlink(versionDir, currentLink)
+
+	// Update global config
+	gc.Plugins["wave-cli/flow"] = "0.1.0"
+	configPath := filepath.Join(homeDir, ".wave", "config")
+	config.WriteGlobalConfig(configPath, gc)
+
+	return homeDir, pluginsDir
+}
+
+func TestE2E_FlowPluginExecution(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+
+	section := map[string]any{
+		"build": map[string]any{
+			"cmd":        "echo building_the_app",
+			"on_success": "echo build_succeeded",
+		},
+		"clean": map[string]any{
+			"cmd": "echo cleaning",
+		},
+	}
+
+	result, err := runner.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp/project")
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d\nStderr: %s", result.ExitCode, result.Stderr)
+	}
+
+	stdout := result.Stdout
+	if !strings.Contains(stdout, "building_the_app") {
+		t.Errorf("Missing main cmd output: %q", stdout)
+	}
+	if !strings.Contains(stdout, "build_succeeded") {
+		t.Errorf("Missing on_success callback output: %q", stdout)
+	}
+}
+
+func TestE2E_FlowPluginList(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+
+	section := map[string]any{
+		"build": map[string]any{"cmd": "go build"},
+		"clean": map[string]any{"cmd": "rm -rf dist"},
+		"dev":   map[string]any{"cmd": "go run ."},
+	}
+
+	result, err := runner.Execute(flowBin, []string{"--list"}, section, "flow", "0.1.0", "/tmp")
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d\nStderr: %s", result.ExitCode, result.Stderr)
+	}
+
+	stdout := result.Stdout
+	if !strings.Contains(stdout, "build") {
+		t.Errorf("Missing 'build' in list: %q", stdout)
+	}
+	if !strings.Contains(stdout, "clean") {
+		t.Errorf("Missing 'clean' in list: %q", stdout)
+	}
+	if !strings.Contains(stdout, "dev") {
+		t.Errorf("Missing 'dev' in list: %q", stdout)
+	}
+}
+
+func TestE2E_FlowPluginUnknownCommand(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+
+	section := map[string]any{
+		"build": map[string]any{"cmd": "go build"},
+	}
+
+	result, err := runner.Execute(flowBin, []string{"deploy"}, section, "flow", "0.1.0", "/tmp")
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+
+	// Should fail with structured error
+	if result.ExitCode == 0 {
+		t.Error("Expected non-zero exit code for unknown command")
+	}
+	if result.PluginError == nil {
+		t.Fatal("Expected structured wave error for unknown command")
+	}
+	if result.PluginError.Code != "FLOW_RESOLVE_ERROR" {
+		t.Errorf("Error code = %q, want FLOW_RESOLVE_ERROR", result.PluginError.Code)
+	}
+}
+
+func TestE2E_FlowPluginOnFail(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+
+	section := map[string]any{
+		"build": map[string]any{
+			"cmd":     "exit 1",
+			"on_fail": "echo caught_failure",
+		},
+	}
+
+	result, err := runner.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp")
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+
+	if result.ExitCode == 0 {
+		t.Error("Expected non-zero exit for failing command")
+	}
+	if !strings.Contains(result.Stdout, "caught_failure") {
+		t.Errorf("Missing on_fail output: %q", result.Stdout)
+	}
+}
+
+func TestE2E_FlowSchemaValidation(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+	_, pluginsDir := setupFlowPlugin(t, flowBin)
+
+	reg := pluginmgmt.NewRegistry(pluginsDir)
+
+	// Read the schema
+	schemaBytes, err := reg.ReadSchema("wave-cli/flow")
+	if err != nil {
+		t.Fatalf("ReadSchema failed: %v", err)
+	}
+	if len(schemaBytes) == 0 {
+		t.Fatal("Schema should not be empty")
+	}
+
+	// Parse it
+	s, err := schema.ParseSchemaFromBytes(schemaBytes)
+	if err != nil {
+		t.Fatalf("ParseSchemaFromBytes failed: %v", err)
+	}
+	if s.Plugin != "flow" {
+		t.Errorf("Schema plugin = %q, want 'flow'", s.Plugin)
+	}
+
+	// Validate a valid section
+	validSection := map[string]any{
+		"build": map[string]any{
+			"cmd":        "go build",
+			"on_success": "echo done",
+			"env":        map[string]any{"GOOS": "linux"},
+		},
+	}
+	errs := s.ValidateSection(validSection)
+	if len(errs) != 0 {
+		t.Errorf("Valid section should pass, got %v", errs)
+	}
+
+	// Validate an invalid section (missing cmd)
+	invalidSection := map[string]any{
+		"build": map[string]any{
+			"on_success": "echo done",
+		},
+	}
+	errs = s.ValidateSection(invalidSection)
+	if len(errs) == 0 {
+		t.Error("Invalid section (missing cmd) should fail validation")
+	}
+}
+
+func TestE2E_FlowRulesValidation(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+	_, pluginsDir := setupFlowPlugin(t, flowBin)
+
+	reg := pluginmgmt.NewRegistry(pluginsDir)
+	schemaBytes, _ := reg.ReadSchema("wave-cli/flow")
+
+	// Valid Wavefile — should pass
+	validRaw := []byte(`
+[project]
+name = "test"
+
+[flow]
+build = { cmd = "go build" }
+`)
+	validSection := map[string]any{
+		"build": map[string]any{"cmd": "go build"},
+	}
+
+	errs := validate.ValidatePluginConfig("flow", validRaw, validSection, schemaBytes)
+	if len(errs) != 0 {
+		t.Errorf("Valid Wavefile should pass validation, got %v", errs)
+	}
+
+	// Invalid: nested header [flow.build]
+	invalidRaw := []byte(`
+[flow.build]
+cmd = "go build"
+`)
+	errs = validate.ValidatePluginConfig("flow", invalidRaw, map[string]any{}, schemaBytes)
+	if len(errs) == 0 {
+		t.Error("Nested header [flow.build] should be rejected")
+	}
+
+	// Invalid: leaked key at root
+	leakedRaw := []byte(`
+cmd = "leaked"
+
+[flow]
+build = { cmd = "go build" }
+`)
+	errs = validate.ValidatePluginConfig("flow", leakedRaw, validSection, schemaBytes)
+	if len(errs) == 0 {
+		t.Error("Leaked 'cmd' at root should be rejected")
+	}
+}
+
+func TestE2E_FlowFullPipeline(t *testing.T) {
+	flowBin := buildFlowPlugin(t)
+	homeDir, pluginsDir := setupFlowPlugin(t, flowBin)
+
+	// Create a project with Wavefile
+	projectDir := filepath.Join(homeDir, "myproject")
+	os.MkdirAll(projectDir, 0755)
+
+	wavefileContent := `[project]
+name = "flow-e2e"
+version = "1.0.0"
+
+[flow]
+build = { cmd = "echo building_app", on_success = "echo all_good" }
+clean = { cmd = "echo cleaned" }
+test  = { cmd = "echo tests_passing", env = { CI = "true" } }
+`
+	os.WriteFile(filepath.Join(projectDir, "Wavefile"), []byte(wavefileContent), 0644)
+
+	// 1. Parse Wavefile
+	wf, err := config.ParseWavefile(filepath.Join(projectDir, "Wavefile"))
+	if err != nil {
+		t.Fatalf("ParseWavefile failed: %v", err)
+	}
+
+	section := wf.Sections["flow"]
+	if section == nil {
+		t.Fatal("flow section missing from Wavefile")
+	}
+
+	// 2. Validate with schema
+	reg := pluginmgmt.NewRegistry(pluginsDir)
+	schemaBytes, _ := reg.ReadSchema("wave-cli/flow")
+	rawBytes, _ := config.ReadWavefileRaw(filepath.Join(projectDir, "Wavefile"))
+
+	validationErrs := validate.ValidatePluginConfig("flow", rawBytes, section, schemaBytes)
+	if len(validationErrs) != 0 {
+		t.Fatalf("Wavefile validation failed: %v", validationErrs)
+	}
+
+	// 3. Execute flow plugin — build
+	result, err := runner.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", projectDir)
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d, stderr = %s", result.ExitCode, result.Stderr)
+	}
+	if !strings.Contains(result.Stdout, "building_app") {
+		t.Errorf("Missing main output: %q", result.Stdout)
+	}
+	if !strings.Contains(result.Stdout, "all_good") {
+		t.Errorf("Missing on_success: %q", result.Stdout)
+	}
+
+	// 4. Execute flow plugin — clean
+	result2, err := runner.Execute(flowBin, []string{"clean"}, section, "flow", "0.1.0", projectDir)
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+	if !strings.Contains(result2.Stdout, "cleaned") {
+		t.Errorf("Missing clean output: %q", result2.Stdout)
+	}
+
+	// 5. Execute flow plugin — test (with env)
+	result3, err := runner.Execute(flowBin, []string{"test"}, section, "flow", "0.1.0", projectDir)
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+	if !strings.Contains(result3.Stdout, "tests_passing") {
+		t.Errorf("Missing test output: %q", result3.Stdout)
 	}
 }
