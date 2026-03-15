@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,6 +15,7 @@ import (
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
 	"github.com/wave-cli/wave-core/internal/runner"
 	"github.com/wave-cli/wave-core/internal/ui"
+	"github.com/wave-cli/wave-core/internal/validate"
 )
 
 var (
@@ -130,12 +132,22 @@ func runPlugin(fullName string, args []string, gc *config.GlobalConfig, pluginsD
 
 	// Try to find project root and Wavefile
 	var section map[string]any
+	var rawWavefile []byte
 	projectRoot := ""
 	cwd, _ := os.Getwd()
 	if wfPath, err := config.DiscoverWavefile(cwd); err == nil {
 		projectRoot = filepath.Dir(wfPath)
+		rawWavefile, _ = config.ReadWavefileRaw(wfPath)
 		if wf, err := config.ParseWavefile(wfPath); err == nil {
 			section = wf.Sections[ref.Name]
+		}
+	}
+
+	// Validate Wavefile section against plugin schema and rules
+	if rawWavefile != nil {
+		schemaBytes, _ := reg.ReadSchema(fullName)
+		if validationErrs := validate.ValidatePluginConfig(ref.Name, rawWavefile, section, schemaBytes); len(validationErrs) > 0 {
+			return fmt.Errorf("Wavefile validation failed for [%s]:\n  %s", ref.Name, strings.Join(validationErrs, "\n  "))
 		}
 	}
 
