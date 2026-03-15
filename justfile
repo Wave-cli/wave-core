@@ -2,11 +2,14 @@
 # https://github.com/casey/just
 
 set dotenv-load := false
+set shell := ["bash", "-euxo", "pipefail", "-c"]
 
 # project metadata
 mod     := "github.com/wave-cli/wave-core"
 bin     := "wave"
 version := `git describe --tags --always --dirty 2>/dev/null || echo "dev"`
+commit  := `git rev-parse --short HEAD 2>/dev/null || echo "none"`
+date    := `date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown"`
 
 # ─── default ──────────────────────────────────────────────────────────
 
@@ -18,15 +21,15 @@ default:
 
 # build the wave binary
 build:
-    go build -ldflags "-X {{mod}}/internal/version.Version={{version}}" -o {{bin}} .
+    go build -ldflags "-X {{mod}}/internal/version.version={{version}} -X {{mod}}/internal/version.commit={{commit}} -X {{mod}}/internal/version.date={{date}}" -o {{bin}} .
 
 # run wave with arguments (e.g. just run version)
 run *args:
-    go run -ldflags "-X {{mod}}/internal/version.Version={{version}}" . {{args}}
+    go run -ldflags "-X {{mod}}/internal/version.version={{version}} -X {{mod}}/internal/version.commit={{commit}} -X {{mod}}/internal/version.date={{date}}" . {{args}}
 
 # build and install to $GOPATH/bin
 install:
-    go install -ldflags "-X {{mod}}/internal/version.Version={{version}}" .
+    go install -ldflags "-X {{mod}}/internal/version.version={{version}} -X {{mod}}/internal/version.commit={{commit}} -X {{mod}}/internal/version.date={{date}}" .
 
 # remove build artifacts
 clean:
@@ -84,19 +87,19 @@ lint: fmt vet
 
 # open architecture doc
 docs:
-    xdg-open docs/architecture.md 2>/dev/null || open docs/architecture.md 2>/dev/null || less docs/architecture.md
+    okular docs/architecture.md 2>/dev/null || xdg-open docs/architecture.md 2>/dev/null || open docs/architecture.md 2>/dev/null || less docs/architecture.md
 
 # open testing guide
 docs-testing:
-    xdg-open docs/testing.md 2>/dev/null || open docs/testing.md 2>/dev/null || less docs/testing.md
+    okular docs/testing.md 2>/dev/null || xdg-open docs/testing.md 2>/dev/null || open docs/testing.md 2>/dev/null || less docs/testing.md
 
 # open plugin authoring guide
 docs-plugin:
-    xdg-open docs/plugin-authoring.md 2>/dev/null || open docs/plugin-authoring.md 2>/dev/null || less docs/plugin-authoring.md
+    okular docs/plugin-authoring.md 2>/dev/null || xdg-open docs/plugin-authoring.md 2>/dev/null || open docs/plugin-authoring.md 2>/dev/null || less docs/plugin-authoring.md
 
 # open the project plan
 docs-plan:
-    xdg-open plan.md 2>/dev/null || open plan.md 2>/dev/null || less plan.md
+    okular plan.md 2>/dev/null || xdg-open plan.md 2>/dev/null || open plan.md 2>/dev/null || less plan.md
 
 # ─── deps ─────────────────────────────────────────────────────────────
 
