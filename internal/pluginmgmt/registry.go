@@ -2,6 +2,7 @@ package pluginmgmt
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -85,4 +86,41 @@ func (r *Registry) ListInstalled(plugins map[string]string) []InstalledPlugin {
 		})
 	}
 	return list
+}
+
+// ReadSchema reads and returns the raw schema file bytes for an installed
+// plugin. It first reads the Waveplugin metadata to find the schema filename,
+// then reads that file from the plugin's install directory.
+//
+// Returns (nil, nil) if the plugin has no schema declared.
+// Returns an error if the Waveplugin can't be read or the schema file is missing.
+func (r *Registry) ReadSchema(fullName string) ([]byte, error) {
+	wp, err := r.ReadWaveplugin(fullName)
+	if err != nil {
+		return nil, fmt.Errorf("reading schema for %q: %w", fullName, err)
+	}
+
+	if wp.Assets.Schema == "" {
+		return nil, nil
+	}
+
+	ref, err := ParsePluginRef(fullName)
+	if err != nil {
+		return nil, err
+	}
+
+	schemaPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "current", wp.Assets.Schema)
+
+	// Resolve symlink to verify it exists
+	resolved, err := filepath.EvalSymlinks(schemaPath)
+	if err != nil {
+		return nil, fmt.Errorf("schema file for %q not found: %w", fullName, err)
+	}
+
+	data, err := os.ReadFile(resolved)
+	if err != nil {
+		return nil, fmt.Errorf("reading schema file for %q: %w", fullName, err)
+	}
+
+	return data, nil
 }

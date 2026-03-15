@@ -259,3 +259,144 @@ func TestListInstalledEmpty(t *testing.T) {
 		t.Errorf("ListInstalled should return empty for no plugins, got %d", len(list))
 	}
 }
+
+// --- Waveplugin schema field ---
+
+func TestParseWavepluginWithSchema(t *testing.T) {
+	content := `
+[plugin]
+name = "flow"
+version = "1.0.0"
+description = "Flow plugin"
+creator = "wave-cli"
+
+[compatibility]
+min_wave_version = "0.1.0"
+
+[assets]
+schema = "Waveschema"
+files = ["templates/"]
+`
+	dir := t.TempDir()
+	path := filepath.Join(dir, "Waveplugin")
+	os.WriteFile(path, []byte(content), 0644)
+
+	wp, err := ParseWaveplugin(path)
+	if err != nil {
+		t.Fatalf("ParseWaveplugin failed: %v", err)
+	}
+	if wp.Assets.Schema != "Waveschema" {
+		t.Errorf("Schema = %q, want %q", wp.Assets.Schema, "Waveschema")
+	}
+}
+
+func TestParseWavepluginWithoutSchema(t *testing.T) {
+	content := `
+[plugin]
+name = "bare"
+version = "0.1.0"
+description = "No schema plugin"
+creator = "test"
+`
+	dir := t.TempDir()
+	path := filepath.Join(dir, "Waveplugin")
+	os.WriteFile(path, []byte(content), 0644)
+
+	wp, err := ParseWaveplugin(path)
+	if err != nil {
+		t.Fatalf("ParseWaveplugin failed: %v", err)
+	}
+	if wp.Assets.Schema != "" {
+		t.Errorf("Schema should be empty for plugins without schema, got %q", wp.Assets.Schema)
+	}
+}
+
+// --- Registry.ResolveSchema ---
+
+func TestResolveSchemaPath(t *testing.T) {
+	home := t.TempDir()
+	pluginsDir := filepath.Join(home, ".wave", "plugins")
+
+	// Create plugin directory with Waveplugin and schema file
+	versionDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v1.0.0")
+	os.MkdirAll(versionDir, 0755)
+
+	// Write Waveplugin with schema reference
+	wpContent := `
+[plugin]
+name = "flow"
+version = "1.0.0"
+description = "Flow plugin"
+creator = "wave-cli"
+
+[assets]
+schema = "Waveschema"
+`
+	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), []byte(wpContent), 0644)
+
+	// Write the schema file
+	schemaContent := `
+plugin = "flow"
+
+[fields.cmd]
+type = "string"
+required = true
+desc = "Command to execute"
+`
+	os.WriteFile(filepath.Join(versionDir, "Waveschema"), []byte(schemaContent), 0644)
+
+	// Create current symlink
+	currentLink := filepath.Join(pluginsDir, "wave-cli", "flow", "current")
+	os.Symlink(versionDir, currentLink)
+
+	reg := NewRegistry(pluginsDir)
+	schemaBytes, err := reg.ReadSchema("wave-cli/flow")
+	if err != nil {
+		t.Fatalf("ReadSchema failed: %v", err)
+	}
+	if len(schemaBytes) == 0 {
+		t.Fatal("ReadSchema returned empty bytes")
+	}
+}
+
+func TestResolveSchemaNoSchemaField(t *testing.T) {
+	home := t.TempDir()
+	pluginsDir := filepath.Join(home, ".wave", "plugins")
+
+	versionDir := filepath.Join(pluginsDir, "wave-cli", "bare", "v1.0.0")
+	os.MkdirAll(versionDir, 0755)
+
+	// Write Waveplugin WITHOUT schema field
+	wpContent := `
+[plugin]
+name = "bare"
+version = "1.0.0"
+description = "No schema"
+creator = "test"
+`
+	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), []byte(wpContent), 0644)
+
+	currentLink := filepath.Join(pluginsDir, "wave-cli", "bare", "current")
+	os.Symlink(versionDir, currentLink)
+
+	reg := NewRegistry(pluginsDir)
+	schemaBytes, err := reg.ReadSchema("wave-cli/bare")
+	if err != nil {
+		t.Fatalf("ReadSchema should not error for plugins without schema: %v", err)
+	}
+	if schemaBytes != nil {
+		t.Errorf("ReadSchema should return nil for plugins without schema, got %d bytes", len(schemaBytes))
+	}
+}
+
+func TestResolveSchemaNotInstalled(t *testing.T) {
+	home := t.TempDir()
+	pluginsDir := filepath.Join(home, ".wave", "plugins")
+	os.MkdirAll(pluginsDir, 0755)
+
+	reg := NewRegistry(pluginsDir)
+	_, err := reg.ReadSchema("wave-cli/nonexistent")
+	if err == nil {
+		t.Error("ReadSchema should fail for non-installed plugin")
+	}
+}
