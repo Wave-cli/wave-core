@@ -6,6 +6,7 @@ package config
 type GlobalConfig struct {
 	Core     CoreConfig        `toml:"core"`
 	Projects ProjectsConfig    `toml:"projects"`
+	User     UserConfig        `toml:"user"`
 	Plugins  map[string]string `toml:"plugins"`
 }
 
@@ -17,6 +18,12 @@ type CoreConfig struct {
 // ProjectsConfig holds project folder locations.
 type ProjectsConfig struct {
 	Folders []string `toml:"folders"`
+}
+
+// UserConfig holds user-specific settings.
+type UserConfig struct {
+	Name string `toml:"name"`
+	Org  string `toml:"org"`
 }
 
 // Wavefile represents a project-level Wavefile.

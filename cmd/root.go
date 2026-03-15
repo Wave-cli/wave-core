@@ -70,6 +70,7 @@ func NewRootCmd() *cobra.Command {
 	// Register built-in commands
 	rootCmd.AddCommand(NewVersionCmd())
 	rootCmd.AddCommand(NewInitCmd())
+	rootCmd.AddCommand(NewConfigCmd())
 	rootCmd.AddCommand(NewInstallCmd())
 	rootCmd.AddCommand(NewUninstallCmd())
 	rootCmd.AddCommand(NewListCmd())

@@ -59,6 +59,7 @@ func DefaultGlobalConfig(homeDir string) *GlobalConfig {
 		Projects: ProjectsConfig{
 			Folders: []string{},
 		},
+		User:    UserConfig{},
 		Plugins: make(map[string]string),
 	}
 }
