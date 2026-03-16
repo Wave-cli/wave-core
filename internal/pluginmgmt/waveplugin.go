@@ -34,8 +34,7 @@ type CompatibilityMeta struct {
 
 // AssetsMeta holds the [assets] section.
 type AssetsMeta struct {
-	Schema string   `toml:"schema"` // Optional schema filename (e.g. "Waveschema")
-	Files  []string `toml:"files"`
+	Files []string `toml:"files"`
 }
 
 // ParseWaveplugin reads and decodes a Waveplugin TOML file at path.

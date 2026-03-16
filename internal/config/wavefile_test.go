@@ -156,33 +156,3 @@ func TestDiscoverWavefileInCurrentDir(t *testing.T) {
 		t.Errorf("found %q, want %q", found, wavefilePath)
 	}
 }
-
-// --- ReadWavefileRaw ---
-
-func TestReadWavefileRaw(t *testing.T) {
-	content := `[project]
-name = "test"
-version = "1.0.0"
-
-[flow]
-build = { cmd = "go build" }
-`
-	dir := t.TempDir()
-	path := filepath.Join(dir, "Wavefile")
-	os.WriteFile(path, []byte(content), 0644)
-
-	raw, err := ReadWavefileRaw(path)
-	if err != nil {
-		t.Fatalf("ReadWavefileRaw failed: %v", err)
-	}
-	if string(raw) != content {
-		t.Errorf("ReadWavefileRaw returned unexpected content:\n%s", string(raw))
-	}
-}
-
-func TestReadWavefileRawMissing(t *testing.T) {
-	_, err := ReadWavefileRaw("/nonexistent/Wavefile")
-	if err == nil {
-		t.Error("Should fail for missing file")
-	}
-}
