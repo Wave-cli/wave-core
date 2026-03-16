@@ -1,6 +1,22 @@
 # wave-core
 
+[![GitHub stars](https://img.shields.io/github/stars/Wave-cli/wave-core?style=flat&logo=github)](https://github.com/Wave-cli/wave-core/stargazers)
+[![Issues](https://img.shields.io/github/issues/Wave-cli/wave-core?style=flat&logo=github)](https://github.com/Wave-cli/wave-core/issues)
+[![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)](LICENSE)
+[![Go](https://img.shields.io/badge/go-1.25.0-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
+[![Release](https://img.shields.io/github/v/release/Wave-cli/wave-core?style=flat&logo=github)](https://github.com/Wave-cli/wave-core/releases)
+
 A modular CLI orchestrator powered by plugins. Plugins are standalone binaries installed to `~/.wave/plugins/` and executed through the unified `wave` command.
+
+## Table of contents
+
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Wavefile](#wavefile)
+- [Built-in commands](#built-in-commands)
+- [Plugin architecture](#plugin-architecture)
+- [Local flow plugin testing](#local-flow-plugin-testing)
+- [Development](#development)
 
 ## Install
 
@@ -57,16 +73,43 @@ Plugins are standalone binaries that follow a simple protocol:
 - **Config**: JSON on stdin (from the Wavefile section)
 - **Environment**: `WAVE_PLUGIN_NAME`, `WAVE_PLUGIN_VERSION`, `WAVE_PLUGIN_DIR`, `WAVE_PLUGIN_ASSETS`, `WAVE_PROJECT_ROOT`
 - **Errors**: Structured JSON on stderr (`{"wave_error": true, "code": "...", "message": "..."}`)
-- **Schema**: Optional Waveschema file for config validation
 
 Plugins are installed to `~/.wave/plugins/<org>/<name>/<version>/` with a `current` symlink pointing to the active version.
 
-## Schema validation
+## Local flow plugin testing
 
-Plugins can ship a Waveschema file that defines the expected structure of their Wavefile section. wave-core validates config before passing it to the plugin:
+Use this when you are developing `wave-flow` locally and want to run it through `wave` without publishing a release:
 
-- **Schema validation**: Checks required fields, types, and unknown keys
-- **Rules engine**: Rejects structural errors like nested headers (`[flow.build]`) and leaked keys
+```bash
+# Build the plugin (from the sibling repo)
+cd ../wave-flow
+go build -o bin/flow .
+
+# Install into local wave plugin dir
+mkdir -p ~/.wave/plugins/wave-cli/flow/v0.1.0/bin
+cp bin/flow ~/.wave/plugins/wave-cli/flow/v0.1.0/bin/flow
+cp Waveplugin ~/.wave/plugins/wave-cli/flow/v0.1.0/Waveplugin
+ln -sfn ~/.wave/plugins/wave-cli/flow/v0.1.0 ~/.wave/plugins/wave-cli/flow/current
+```
+
+Then add a `[flow]` section in your Wavefile and run:
+
+```bash
+wave flow --list
+wave flow build
+```
+
+## Using flow in this repo
+
+This repository includes a `Wavefile` that mirrors common `just` recipes. If you have the flow plugin installed, you can run the usual dev tasks via:
+
+```bash
+wave flow test
+wave flow test-e2e
+wave flow lint
+wave flow build
+wave flow ci
+```
 
 ## Development
 

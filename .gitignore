@@ -1,5 +1,6 @@
 # Binaries
 wave-core
+wave
 *.exe
 *.dll
 *.so
@@ -38,3 +39,7 @@ go.work.sum
 
 # Test artifacts
 testdata/plugins/echo/echo
+
+# Temp files
+*.tmp
+*.tmp.md

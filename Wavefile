@@ -1,6 +1,21 @@
 [project]
 name = "wave-core"
 version = "0.1.0"
-owner = ""
-category = ""
-tags = []
+owner = "bouajila"
+category = "personal"
+tags = ["wave", "dev-tools"]
+
+[flow]
+build = { cmd = "go build -ldflags '-X github.com/wave-cli/wave-core/internal/version.version=dev' -o wave ." }
+test = { cmd = "go test ./..." }
+test-v = { cmd = "go test -v ./..." }
+test-cover = { cmd = "go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out" }
+test-unit = { cmd = "go test $(go list ./... | grep -v /e2e)" }
+test-e2e = { cmd = "go test -v ./e2e/..." }
+fmt = { cmd = "go fmt ./..." }
+vet = { cmd = "go vet ./..." }
+lint = { cmd = "go fmt ./... && go vet ./..." }
+tidy = { cmd = "go mod tidy" }
+deps = { cmd = "go mod download" }
+clean = { cmd = "rm -f wave coverage.out coverage.html testdata/plugins/echo/echo" }
+ci = { cmd = "go fmt ./... && go vet ./... && go test ./... && go build -o wave .", on_fail = "echo CI failed" }
