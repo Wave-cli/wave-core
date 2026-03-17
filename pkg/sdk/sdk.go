@@ -193,3 +193,10 @@ func GetPluginEnv() PluginEnv {
 		ProjectRoot: os.Getenv("WAVE_PROJECT_ROOT"),
 	}
 }
+
+// Errf creates a new error with a formatted message.
+// This is a convenience wrapper around fmt.Errorf for plugin authors.
+// It supports all fmt.Errorf formatting verbs including %w for wrapping errors.
+func Errf(format string, args ...any) error {
+	return fmt.Errorf(format, args...)
+}

@@ -278,3 +278,59 @@ func TestInitFromInvalidJSON(t *testing.T) {
 		t.Error("InitFrom should fail for invalid JSON")
 	}
 }
+
+// =============================================================================
+// Errf — error creation helper (replaces fmt.Errorf)
+// =============================================================================
+
+func TestErrf(t *testing.T) {
+	err := Errf("something went wrong")
+	if err == nil {
+		t.Fatal("Errf should return an error")
+	}
+	if err.Error() != "something went wrong" {
+		t.Errorf("Error message = %q", err.Error())
+	}
+}
+
+func TestErrfFormatted(t *testing.T) {
+	err := Errf("failed to open file %q: %s", "test.txt", "not found")
+	if err == nil {
+		t.Fatal("Errf should return an error")
+	}
+	expected := `failed to open file "test.txt": not found`
+	if err.Error() != expected {
+		t.Errorf("Error message = %q, want %q", err.Error(), expected)
+	}
+}
+
+func TestErrfWrap(t *testing.T) {
+	original := Errf("original error")
+	wrapped := Errf("wrapper: %w", original)
+
+	if wrapped == nil {
+		t.Fatal("Errf should return an error")
+	}
+
+	// Should be unwrappable
+	if !strings.Contains(wrapped.Error(), "original error") {
+		t.Errorf("Wrapped error should contain original: %q", wrapped.Error())
+	}
+}
+
+func TestErrfEmpty(t *testing.T) {
+	err := Errf("")
+	if err == nil {
+		t.Fatal("Errf with empty string should still return an error")
+	}
+}
+
+func TestErrfWithNumbers(t *testing.T) {
+	err := Errf("port %d is invalid", 65536)
+	if err == nil {
+		t.Fatal("Errf should return an error")
+	}
+	if !strings.Contains(err.Error(), "65536") {
+		t.Errorf("Error should contain number: %q", err.Error())
+	}
+}
