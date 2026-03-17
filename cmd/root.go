@@ -62,10 +62,12 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
 	rootCmd.PersistentFlags().Bool("debug", false, "Debug output")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress non-error output")
+	rootCmd.PersistentFlags().Bool("manual", false, "Run plugin without Wavefile config (manual mode)")
 
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
+	viper.BindPFlag("manual", rootCmd.PersistentFlags().Lookup("manual"))
 
 	// Register built-in commands
 	rootCmd.AddCommand(NewVersionCmd())
@@ -128,14 +130,17 @@ func runPlugin(fullName string, args []string, gc *config.GlobalConfig, pluginsD
 	// Get plugin version
 	version := gc.Plugins[fullName]
 
-	// Try to find project root and Wavefile
+	// Try to find project root and Wavefile (unless in manual mode)
 	var section map[string]any
 	projectRoot := ""
 	cwd, _ := os.Getwd()
-	if wfPath, err := config.DiscoverWavefile(cwd); err == nil {
-		projectRoot = filepath.Dir(wfPath)
-		if wf, err := config.ParseWavefile(wfPath); err == nil {
-			section = wf.Sections[ref.Name]
+
+	if !viper.GetBool("manual") {
+		if wfPath, err := config.DiscoverWavefile(cwd); err == nil {
+			projectRoot = filepath.Dir(wfPath)
+			if wf, err := config.ParseWavefile(wfPath); err == nil {
+				section = wf.Sections[ref.Name]
+			}
 		}
 	}
 
