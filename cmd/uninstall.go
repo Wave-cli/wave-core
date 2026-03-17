@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wave-cli/wave-core/internal/config"
 	"github.com/wave-cli/wave-core/internal/runner"
+	"github.com/wave-cli/wave-core/internal/ui"
 )
 
 // NewUninstallCmd creates the 'wave uninstall' command.
@@ -48,7 +49,9 @@ func NewUninstallCmd() *cobra.Command {
 				return fmt.Errorf("plugin %q is not installed", pluginName)
 			}
 
-			printer.Info("Uninstalling %s...", fullName)
+			// Create spinner for uninstall progress
+			spinner := ui.NewSpinner(os.Stderr, fmt.Sprintf("Uninstalling %s...", fullName))
+			spinner.Start()
 
 			// Remove plugin directory - use only plugin name (not org/name)
 			// fullName is "org/name", we extract just "name"
@@ -57,15 +60,19 @@ func NewUninstallCmd() *cobra.Command {
 				shortName = parts[1]
 			}
 			pluginDir := filepath.Join(pluginsDir, shortName)
-			os.RemoveAll(pluginDir)
+			if err := os.RemoveAll(pluginDir); err != nil {
+				spinner.StopWithError(fmt.Sprintf("Failed to remove %s", fullName))
+				return fmt.Errorf("removing plugin directory: %w", err)
+			}
 
 			// Remove from global config
 			delete(gc.Plugins, fullName)
 			if err := config.WriteGlobalConfig(configPath, gc); err != nil {
+				spinner.StopWithError("Failed to update config")
 				return fmt.Errorf("updating config: %w", err)
 			}
 
-			printer.Success("Uninstalled %s", fullName)
+			spinner.StopWithSuccess(fmt.Sprintf("Uninstalled %s", fullName))
 			return nil
 		},
 	}

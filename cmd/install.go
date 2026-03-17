@@ -10,6 +10,7 @@ import (
 	"github.com/wave-cli/wave-core/internal/config"
 	"github.com/wave-cli/wave-core/internal/downloader"
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
+	"github.com/wave-cli/wave-core/internal/ui"
 	"github.com/wave-cli/wave-core/internal/version"
 )
 
@@ -26,8 +27,6 @@ func NewInstallCmd() *cobra.Command {
 				return fmt.Errorf("invalid plugin reference: %w", err)
 			}
 
-			printer.Info("Installing %s...", ref.FullName())
-
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				return fmt.Errorf("getting home directory: %w", err)
@@ -40,8 +39,14 @@ func NewInstallCmd() *cobra.Command {
 			token := os.Getenv("GITHUB_TOKEN")
 
 			client := downloader.NewClient("", token)
+
+			// Create spinner for installation progress
+			spinner := ui.NewSpinner(os.Stderr, fmt.Sprintf("Installing %s...", ref.FullName()))
+			spinner.Start()
+
 			err = client.InstallPlugin(ref.Org, ref.Name, ref.Version, pluginsDir)
 			if err != nil {
+				spinner.StopWithError(fmt.Sprintf("Failed to install %s", ref.FullName()))
 				return fmt.Errorf("installing %s: %w", ref.FullName(), err)
 			}
 
@@ -54,6 +59,7 @@ func NewInstallCmd() *cobra.Command {
 				// Check compatibility
 				info := version.Get()
 				if !version.SatisfiesMin(info.Version, wp.Compatibility.MinWaveVersion) {
+					spinner.Stop()
 					printer.Warn("Plugin requires wave >= %s (you have %s)",
 						wp.Compatibility.MinWaveVersion, info.Version)
 				}
@@ -66,10 +72,11 @@ func NewInstallCmd() *cobra.Command {
 			}
 			gc.Plugins[ref.FullName()] = installedVersion
 			if err := config.WriteGlobalConfig(configPath, gc); err != nil {
+				spinner.StopWithError("Failed to update config")
 				return fmt.Errorf("updating config: %w", err)
 			}
 
-			printer.Success("Installed %s v%s", ref.FullName(), trimV(installedVersion))
+			spinner.StopWithSuccess(fmt.Sprintf("Installed %s v%s", ref.FullName(), trimV(installedVersion)))
 			return nil
 		},
 	}
