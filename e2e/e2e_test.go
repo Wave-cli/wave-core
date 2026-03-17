@@ -14,8 +14,8 @@ import (
 	"github.com/wave-cli/wave-core/internal/bootstrap"
 	"github.com/wave-cli/wave-core/internal/config"
 	"github.com/wave-cli/wave-core/internal/errors"
+	"github.com/wave-cli/wave-core/internal/executor"
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
-	"github.com/wave-cli/wave-core/internal/runner"
 )
 
 // getProjectRoot finds the project root by walking up to find go.mod.
@@ -199,7 +199,7 @@ func TestE2E_PluginExecutionWithConfig(t *testing.T) {
 		"debug":       true,
 	}
 
-	result, err := runner.Execute(echoBin, []string{"deploy"}, section, "echo", "1.0.0", "/tmp/project")
+	result, err := executor.Execute(echoBin, []string{"deploy"}, section, "echo", "1.0.0", "/tmp/project")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -223,7 +223,7 @@ func TestE2E_PluginExecutionWithConfig(t *testing.T) {
 func TestE2E_PluginExecutionNoConfig(t *testing.T) {
 	echoBin := buildEchoPlugin(t)
 
-	result, err := runner.Execute(echoBin, []string{"status"}, nil, "echo", "1.0.0", "/tmp")
+	result, err := executor.Execute(echoBin, []string{"status"}, nil, "echo", "1.0.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -243,7 +243,7 @@ func TestE2E_PluginExecutionNoConfig(t *testing.T) {
 func TestE2E_PluginErrorHandling(t *testing.T) {
 	echoBin := buildEchoPlugin(t)
 
-	result, err := runner.Execute(echoBin, []string{"fail"}, nil, "echo", "1.0.0", "/tmp")
+	result, err := executor.Execute(echoBin, []string{"fail"}, nil, "echo", "1.0.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute error: %v", err)
 	}
@@ -493,7 +493,7 @@ debug = true
 	}
 
 	// 3. Execute plugin with Wavefile config
-	result, err := runner.Execute(echoBin, []string{"dev"}, section, "echo", "1.0.0", projectDir)
+	result, err := executor.Execute(echoBin, []string{"dev"}, section, "echo", "1.0.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -515,7 +515,7 @@ debug = true
 	}
 
 	// 4. Test error path
-	errResult, err := runner.Execute(echoBin, []string{"fail"}, nil, "echo", "1.0.0", projectDir)
+	errResult, err := executor.Execute(echoBin, []string{"fail"}, nil, "echo", "1.0.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute error: %v", err)
 	}
@@ -562,7 +562,7 @@ func TestE2E_PluginLookupByShortName(t *testing.T) {
 		"other-org/echo": "2.0.0",
 	}
 
-	fullName, version, found := runner.LookupPlugin("flow", plugins)
+	fullName, version, found := executor.LookupPlugin("flow", plugins)
 	if !found {
 		t.Fatal("Should find 'flow' plugin")
 	}
@@ -573,7 +573,7 @@ func TestE2E_PluginLookupByShortName(t *testing.T) {
 		t.Errorf("Version = %q", version)
 	}
 
-	_, _, found = runner.LookupPlugin("nonexistent", plugins)
+	_, _, found = executor.LookupPlugin("nonexistent", plugins)
 	if found {
 		t.Error("Should not find nonexistent plugin")
 	}
@@ -712,7 +712,7 @@ func TestE2E_FlowPluginExecution(t *testing.T) {
 		},
 	}
 
-	result, err := runner.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp/project")
+	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp/project")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -739,7 +739,7 @@ func TestE2E_FlowPluginList(t *testing.T) {
 		"dev":   map[string]any{"cmd": "go run ."},
 	}
 
-	result, err := runner.Execute(flowBin, []string{"--list"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"--list"}, section, "flow", "0.1.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -767,7 +767,7 @@ func TestE2E_FlowPluginUnknownCommand(t *testing.T) {
 		"build": map[string]any{"cmd": "go build"},
 	}
 
-	result, err := runner.Execute(flowBin, []string{"deploy"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"deploy"}, section, "flow", "0.1.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -794,7 +794,7 @@ func TestE2E_FlowPluginOnFail(t *testing.T) {
 		},
 	}
 
-	result, err := runner.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -834,7 +834,7 @@ func TestE2E_FlowRulesValidation(t *testing.T) {
 		"build": map[string]any{"cmd": "echo ok"},
 	}
 
-	result, err := runner.Execute(flowBin, []string{"nonexistent"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"nonexistent"}, section, "flow", "0.1.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -881,7 +881,7 @@ test  = { cmd = "echo tests_passing", env = { CI = "true" } }
 	}
 
 	// 2. Execute flow plugin — build
-	result, err := runner.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", projectDir)
+	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -896,7 +896,7 @@ test  = { cmd = "echo tests_passing", env = { CI = "true" } }
 	}
 
 	// 3. Execute flow plugin — clean
-	result2, err := runner.Execute(flowBin, []string{"clean"}, section, "flow", "0.1.0", projectDir)
+	result2, err := executor.Execute(flowBin, []string{"clean"}, section, "flow", "0.1.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -905,7 +905,7 @@ test  = { cmd = "echo tests_passing", env = { CI = "true" } }
 	}
 
 	// 4. Execute flow plugin — test (with env)
-	result3, err := runner.Execute(flowBin, []string{"test"}, section, "flow", "0.1.0", projectDir)
+	result3, err := executor.Execute(flowBin, []string{"test"}, section, "flow", "0.1.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}

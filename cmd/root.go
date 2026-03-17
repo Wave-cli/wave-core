@@ -11,8 +11,8 @@ import (
 	"github.com/wave-cli/wave-core/internal/bootstrap"
 	"github.com/wave-cli/wave-core/internal/config"
 	"github.com/wave-cli/wave-core/internal/errors"
+	"github.com/wave-cli/wave-core/internal/executor"
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
-	"github.com/wave-cli/wave-core/internal/runner"
 	"github.com/wave-cli/wave-core/internal/ui"
 )
 
@@ -146,7 +146,7 @@ func runPlugin(fullName string, args []string, gc *config.GlobalConfig, pluginsD
 	}
 
 	// Execute with streaming
-	result, err := runner.StreamExecute(binPath, args, section, ref.Name, version, projectRoot, os.Stdout, os.Stderr)
+	result, err := executor.StreamExecute(binPath, args, section, ref.Name, version, projectRoot, os.Stdout, os.Stderr)
 	if err != nil {
 		return err
 	}

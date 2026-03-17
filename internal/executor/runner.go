@@ -1,6 +1,6 @@
-// Package runner handles plugin execution: fork/exec with stdin config,
+// Package executor handles plugin execution: fork/exec with stdin config,
 // environment variables, and stderr parsing.
-package runner
+package executor
 
 import (
 	"bytes"

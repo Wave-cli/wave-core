@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wave-cli/wave-core/internal/config"
-	"github.com/wave-cli/wave-core/internal/runner"
+	"github.com/wave-cli/wave-core/internal/executor"
 	"github.com/wave-cli/wave-core/internal/ui"
 )
 
@@ -36,7 +36,7 @@ func NewUninstallCmd() *cobra.Command {
 			}
 
 			// Find the full name
-			fullName, _, found := runner.LookupPlugin(pluginName, gc.Plugins)
+			fullName, _, found := executor.LookupPlugin(pluginName, gc.Plugins)
 			if !found {
 				// Try as full name
 				if _, ok := gc.Plugins[pluginName]; ok {
