@@ -229,8 +229,8 @@ func (c *Client) InstallPlugin(org, name, version, pluginsDir string) error {
 		return fmt.Errorf("selecting binary: %w", err)
 	}
 
-	// 3. Set up directories
-	versionDir := filepath.Join(pluginsDir, org, name, "v"+ver)
+	// 3. Set up directories - now directly under plugins/<name>/<version>
+	versionDir := filepath.Join(pluginsDir, name, "v"+ver)
 	binDir := filepath.Join(versionDir, "bin")
 	assetsDir := filepath.Join(versionDir, "assets")
 	if err := os.MkdirAll(binDir, 0755); err != nil {
@@ -271,8 +271,8 @@ func (c *Client) InstallPlugin(org, name, version, pluginsDir string) error {
 		}
 	}
 
-	// 6. Create/update current symlink
-	currentLink := filepath.Join(pluginsDir, org, name, "current")
+	// 6. Create/update current symlink - now directly under plugins/<name>/current
+	currentLink := filepath.Join(pluginsDir, name, "current")
 	os.Remove(currentLink) // remove old symlink if exists
 	if err := os.Symlink(versionDir, currentLink); err != nil {
 		return fmt.Errorf("creating current symlink: %w", err)

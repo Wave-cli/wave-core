@@ -6,7 +6,7 @@ import (
 )
 
 // Registry manages installed plugins under a plugins directory.
-// Layout: <pluginsDir>/<org>/<name>/<version>/bin/<name>
+// Layout: <pluginsDir>/<name>/<version>/bin/<name>
 // A "current" symlink points to the active version directory.
 type Registry struct {
 	pluginsDir string
@@ -25,14 +25,15 @@ func NewRegistry(pluginsDir string) *Registry {
 }
 
 // ResolveBinary returns the absolute path to the installed plugin binary
-// via the "current" symlink: <pluginsDir>/<org>/<name>/current/bin/<name>.
+// via the "current" symlink: <pluginsDir>/<name>/current/bin/<name>.
 func (r *Registry) ResolveBinary(fullName string) (string, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
 		return "", err
 	}
 
-	binPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "current", "bin", ref.Name)
+	// Use only the plugin name, not org/name
+	binPath := filepath.Join(r.pluginsDir, ref.Name, "current", "bin", ref.Name)
 
 	// Verify the symlink chain is valid by resolving it.
 	resolved, err := filepath.EvalSymlinks(binPath)
@@ -45,14 +46,15 @@ func (r *Registry) ResolveBinary(fullName string) (string, error) {
 }
 
 // ResolveAssets returns the path to the plugin's assets directory
-// via the "current" symlink: <pluginsDir>/<org>/<name>/current/assets.
+// via the "current" symlink: <pluginsDir>/<name>/current/assets.
 func (r *Registry) ResolveAssets(fullName string) (string, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
 		return "", err
 	}
 
-	assetsPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "current", "assets")
+	// Use only the plugin name, not org/name
+	assetsPath := filepath.Join(r.pluginsDir, ref.Name, "current", "assets")
 
 	// Verify the symlink chain is valid.
 	if _, err := filepath.EvalSymlinks(assetsPath); err != nil {
@@ -70,7 +72,8 @@ func (r *Registry) ReadWaveplugin(fullName string) (*Waveplugin, error) {
 		return nil, err
 	}
 
-	wpPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "current", "Waveplugin")
+	// Use only the plugin name, not org/name
+	wpPath := filepath.Join(r.pluginsDir, ref.Name, "current", "Waveplugin")
 	return ParseWaveplugin(wpPath)
 }
 

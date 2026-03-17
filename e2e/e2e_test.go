@@ -71,7 +71,8 @@ func setupFakeWaveHome(t *testing.T, echoBinPath string) (homeDir string, plugin
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
 	// Install fake plugin: wave-cli/echo v1.0.0
-	versionDir := filepath.Join(pluginsDir, "wave-cli", "echo", "v1.0.0")
+	// Directory structure: plugins/<name>/<version> (no org folder)
+	versionDir := filepath.Join(pluginsDir, "echo", "v1.0.0")
 	binDir := filepath.Join(versionDir, "bin")
 	assetsDir := filepath.Join(versionDir, "assets")
 	os.MkdirAll(binDir, 0755)
@@ -97,7 +98,7 @@ min_wave_version = "0.1.0"
 	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), []byte(wpContent), 0644)
 
 	// Create current symlink
-	currentLink := filepath.Join(pluginsDir, "wave-cli", "echo", "current")
+	currentLink := filepath.Join(pluginsDir, "echo", "current")
 	os.Symlink(versionDir, currentLink)
 
 	// Update global config with plugin
@@ -413,7 +414,8 @@ func TestE2E_UninstallPlugin(t *testing.T) {
 	}
 
 	// Simulate uninstall: remove directory and update config
-	pluginDir := filepath.Join(pluginsDir, "wave-cli", "echo")
+	// Directory structure: plugins/<name> (no org folder)
+	pluginDir := filepath.Join(pluginsDir, "echo")
 	os.RemoveAll(pluginDir)
 	delete(gc.Plugins, "wave-cli/echo")
 	config.WriteGlobalConfig(configPath, gc)
@@ -668,7 +670,8 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
 	// Install flow plugin: wave-cli/flow v0.1.0
-	versionDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v0.1.0")
+	// Directory structure: plugins/<name>/<version> (no org folder)
+	versionDir := filepath.Join(pluginsDir, "flow", "v0.1.0")
 	binDir := filepath.Join(versionDir, "bin")
 	os.MkdirAll(binDir, 0755)
 
@@ -685,7 +688,7 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), wpData, 0644)
 
 	// Create current symlink
-	currentLink := filepath.Join(pluginsDir, "wave-cli", "flow", "current")
+	currentLink := filepath.Join(pluginsDir, "flow", "current")
 	os.Symlink(versionDir, currentLink)
 
 	// Update global config

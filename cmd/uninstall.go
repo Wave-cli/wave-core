@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/wave-cli/wave-core/internal/config"
@@ -49,16 +50,14 @@ func NewUninstallCmd() *cobra.Command {
 
 			printer.Info("Uninstalling %s...", fullName)
 
-			// Remove plugin directory
-			parts := filepath.SplitList(fullName)
-			if len(parts) == 0 {
-				// Use string split for org/name
-				pluginDir := filepath.Join(pluginsDir, filepath.FromSlash(fullName))
-				os.RemoveAll(pluginDir)
-			} else {
-				pluginDir := filepath.Join(pluginsDir, filepath.FromSlash(fullName))
-				os.RemoveAll(pluginDir)
+			// Remove plugin directory - use only plugin name (not org/name)
+			// fullName is "org/name", we extract just "name"
+			shortName := fullName
+			if parts := strings.SplitN(fullName, "/", 2); len(parts) == 2 {
+				shortName = parts[1]
 			}
+			pluginDir := filepath.Join(pluginsDir, shortName)
+			os.RemoveAll(pluginDir)
 
 			// Remove from global config
 			delete(gc.Plugins, fullName)

@@ -148,15 +148,15 @@ func TestResolveBinaryPath(t *testing.T) {
 	home := t.TempDir()
 	pluginsDir := filepath.Join(home, ".wave", "plugins")
 
-	// Create: plugins/wave-cli/flow/v1.2.0/bin/flow
-	binDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v1.2.0", "bin")
+	// Create: plugins/flow/v1.2.0/bin/flow (no org folder)
+	binDir := filepath.Join(pluginsDir, "flow", "v1.2.0", "bin")
 	os.MkdirAll(binDir, 0755)
 	binPath := filepath.Join(binDir, "flow")
 	os.WriteFile(binPath, []byte("#!/bin/sh\necho ok"), 0755)
 
 	// Create current symlink
-	versionDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v1.2.0")
-	currentLink := filepath.Join(pluginsDir, "wave-cli", "flow", "current")
+	versionDir := filepath.Join(pluginsDir, "flow", "v1.2.0")
+	currentLink := filepath.Join(pluginsDir, "flow", "current")
 	os.Symlink(versionDir, currentLink)
 
 	reg := NewRegistry(pluginsDir)
@@ -165,7 +165,7 @@ func TestResolveBinaryPath(t *testing.T) {
 		t.Fatalf("ResolveBinary failed: %v", err)
 	}
 
-	expected := filepath.Join(pluginsDir, "wave-cli", "flow", "current", "bin", "flow")
+	expected := filepath.Join(pluginsDir, "flow", "current", "bin", "flow")
 	if resolved != expected {
 		t.Errorf("resolved = %q, want %q", resolved, expected)
 	}
@@ -187,11 +187,11 @@ func TestResolveAssetsPath(t *testing.T) {
 	home := t.TempDir()
 	pluginsDir := filepath.Join(home, ".wave", "plugins")
 
-	// Create: plugins/wave-cli/flow/v1.0.0/assets/
-	assetsDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v1.0.0", "assets")
+	// Create: plugins/flow/v1.0.0/assets/ (no org folder)
+	assetsDir := filepath.Join(pluginsDir, "flow", "v1.0.0", "assets")
 	os.MkdirAll(assetsDir, 0755)
-	versionDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v1.0.0")
-	currentLink := filepath.Join(pluginsDir, "wave-cli", "flow", "current")
+	versionDir := filepath.Join(pluginsDir, "flow", "v1.0.0")
+	currentLink := filepath.Join(pluginsDir, "flow", "current")
 	os.Symlink(versionDir, currentLink)
 
 	reg := NewRegistry(pluginsDir)
@@ -200,7 +200,7 @@ func TestResolveAssetsPath(t *testing.T) {
 		t.Fatalf("ResolveAssets failed: %v", err)
 	}
 
-	expected := filepath.Join(pluginsDir, "wave-cli", "flow", "current", "assets")
+	expected := filepath.Join(pluginsDir, "flow", "current", "assets")
 	if resolved != expected {
 		t.Errorf("resolved = %q, want %q", resolved, expected)
 	}
@@ -210,13 +210,13 @@ func TestResolveWavepluginPath(t *testing.T) {
 	home := t.TempDir()
 	pluginsDir := filepath.Join(home, ".wave", "plugins")
 
-	// Create: plugins/wave-cli/flow/v1.0.0/Waveplugin
-	versionDir := filepath.Join(pluginsDir, "wave-cli", "flow", "v1.0.0")
+	// Create: plugins/flow/v1.0.0/Waveplugin (no org folder)
+	versionDir := filepath.Join(pluginsDir, "flow", "v1.0.0")
 	os.MkdirAll(versionDir, 0755)
 	wpPath := filepath.Join(versionDir, "Waveplugin")
 	os.WriteFile(wpPath, []byte("[plugin]\nname=\"flow\"\nversion=\"1.0.0\"\ndescription=\"test\"\ncreator=\"x\"\n"), 0644)
 
-	currentLink := filepath.Join(pluginsDir, "wave-cli", "flow", "current")
+	currentLink := filepath.Join(pluginsDir, "flow", "current")
 	os.Symlink(versionDir, currentLink)
 
 	reg := NewRegistry(pluginsDir)
