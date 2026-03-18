@@ -74,7 +74,7 @@ license = "MIT"
 homepage = "https://github.com/my-org/myflow"
 
 [compatibility]
-min_wave_version = "0.1.0"
+min_wave_version = "0.2.0"
 
 [assets]
 files = ["templates/", "defaults.toml"]

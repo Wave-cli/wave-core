@@ -665,7 +665,7 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
-	// Install flow plugin: wave-cli/flow v0.1.0
+	// Install flow plugin: wave-cli/flow v0.2.0
 	// Directory structure: plugins/<name> (single version, no org folder)
 	pluginDir := filepath.Join(pluginsDir, "flow")
 	binDir := filepath.Join(pluginDir, "bin")
@@ -684,7 +684,7 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 	os.WriteFile(filepath.Join(pluginDir, "Waveplugin"), wpData, 0644)
 
 	// Update global config
-	gc.Plugins["wave-cli/flow"] = "0.1.0"
+	gc.Plugins["wave-cli/flow"] = "0.2.0"
 	configPath := filepath.Join(homeDir, ".wave", "config")
 	config.WriteGlobalConfig(configPath, gc)
 
@@ -704,7 +704,7 @@ func TestE2E_FlowPluginExecution(t *testing.T) {
 		},
 	}
 
-	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp/project")
+	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.2.0", "/tmp/project")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -731,7 +731,7 @@ func TestE2E_FlowPluginList(t *testing.T) {
 		"dev":   map[string]any{"cmd": "go run ."},
 	}
 
-	result, err := executor.Execute(flowBin, []string{"--list"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"--list"}, section, "flow", "0.2.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -759,7 +759,7 @@ func TestE2E_FlowPluginUnknownCommand(t *testing.T) {
 		"build": map[string]any{"cmd": "go build"},
 	}
 
-	result, err := executor.Execute(flowBin, []string{"deploy"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"deploy"}, section, "flow", "0.2.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -786,7 +786,7 @@ func TestE2E_FlowPluginOnFail(t *testing.T) {
 		},
 	}
 
-	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.2.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -813,8 +813,8 @@ func TestE2E_FlowSchemaValidation(t *testing.T) {
 	if wp.Plugin.Name != "flow" {
 		t.Errorf("Plugin name = %q, want 'flow'", wp.Plugin.Name)
 	}
-	if wp.Plugin.Version != "0.1.0" {
-		t.Errorf("Plugin version = %q, want '0.1.0'", wp.Plugin.Version)
+	if wp.Plugin.Version != "0.2.0" {
+		t.Errorf("Plugin version = %q, want '0.2.0'", wp.Plugin.Version)
 	}
 }
 
@@ -826,7 +826,7 @@ func TestE2E_FlowRulesValidation(t *testing.T) {
 		"build": map[string]any{"cmd": "echo ok"},
 	}
 
-	result, err := executor.Execute(flowBin, []string{"nonexistent"}, section, "flow", "0.1.0", "/tmp")
+	result, err := executor.Execute(flowBin, []string{"nonexistent"}, section, "flow", "0.2.0", "/tmp")
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -873,7 +873,7 @@ test  = { cmd = "echo tests_passing", env = { CI = "true" } }
 	}
 
 	// 2. Execute flow plugin — build
-	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.1.0", projectDir)
+	result, err := executor.Execute(flowBin, []string{"build"}, section, "flow", "0.2.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -888,7 +888,7 @@ test  = { cmd = "echo tests_passing", env = { CI = "true" } }
 	}
 
 	// 3. Execute flow plugin — clean
-	result2, err := executor.Execute(flowBin, []string{"clean"}, section, "flow", "0.1.0", projectDir)
+	result2, err := executor.Execute(flowBin, []string{"clean"}, section, "flow", "0.2.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -897,7 +897,7 @@ test  = { cmd = "echo tests_passing", env = { CI = "true" } }
 	}
 
 	// 4. Execute flow plugin — test (with env)
-	result3, err := executor.Execute(flowBin, []string{"test"}, section, "flow", "0.1.0", projectDir)
+	result3, err := executor.Execute(flowBin, []string{"test"}, section, "flow", "0.2.0", projectDir)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
