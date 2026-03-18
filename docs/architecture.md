@@ -42,7 +42,7 @@ main.go
         ├── internal/bootstrap   (first-run setup)
         ├── internal/config      (parse global config + Wavefile)
         ├── internal/pluginmgmt  (resolve plugin paths)
-        ├── internal/runner      (execute plugin binaries)
+        ├── internal/executor    (execute plugin binaries)
         ├── internal/errors      (parse/format/log errors)
         ├── internal/ui          (terminal output)
         ├── internal/version     (version info)
@@ -87,7 +87,7 @@ port = 3000
 wave flow dev
   1. Root command sees "flow" is not built-in
   2. Looks up "flow" in installed plugins -> "wave-cli/flow" v1.2.0
-  3. Resolves binary: ~/.wave/plugins/wave-cli/flow/current/bin/flow
+  3. Resolves binary: ~/.wave/plugins/flow/bin/flow
   4. Discovers Wavefile, extracts [flow] section
   5. Serializes section as JSON, passes via stdin
   6. Sets WAVE_* env vars (name, version, dir, assets, project root)
@@ -139,7 +139,7 @@ go test ./internal/config/ -v
 | `internal/errors` | 91% | 12 |
 | `internal/pluginmgmt` | 90% | 15 |
 | `internal/downloader` | 78% | 13 |
-| `internal/runner` | 50% | 9 |
+| `internal/executor` | 50% | 9 |
 | `pkg/sdk` | 65% | 7 |
 | **e2e** | - | 15 |
 | **Total** | | **112** |

@@ -7,6 +7,8 @@ set shell := ["bash", "-euxo", "pipefail", "-c"]
 # project metadata
 mod     := "github.com/wave-cli/wave-core"
 bin     := "wave"
+bin-dir := "/home/bouajila/bin"
+bin-path := bin-dir + "/" + bin
 version := `git describe --tags --always --dirty 2>/dev/null || echo "dev"`
 commit  := `git rev-parse --short HEAD 2>/dev/null || echo "none"`
 date    := `date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown"`
@@ -116,6 +118,14 @@ deps:
 # build the echo test plugin
 build-echo:
     go build -o testdata/plugins/echo/echo ./testdata/plugins/echo/
+
+# build wave binary (outputs to /home/bouajila/bin/wave)
+bin:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{bin-dir}}
+    go build -ldflags "-X {{mod}}/internal/version.version={{version}} -X {{mod}}/internal/version.commit={{commit}} -X {{mod}}/internal/version.date={{date}}" -o {{bin-path}} .
+    echo "Built {{bin-path}}"
 
 # run the full ci pipeline locally (fmt, vet, test, build)
 ci: lint test build

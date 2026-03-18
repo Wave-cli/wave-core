@@ -39,7 +39,7 @@ internal/bootstrap/bootstrap_test.go  # First-run setup, idempotency
 internal/errors/errors_test.go        # Error protocol, parsing, formatting, logging
 internal/pluginmgmt/pluginmgmt_test.go # Waveplugin, PluginRef, Registry
 internal/downloader/downloader_test.go # HTTP mocking, tar.gz extraction, install
-internal/runner/runner_test.go        # Plugin execution, env vars, stdin
+internal/executor/runner_test.go      # Plugin execution, env vars, stdin
 pkg/sdk/sdk_test.go                   # SDK config reading, error formatting
 ```
 
@@ -157,7 +157,7 @@ Located at `testdata/plugins/echo/main.go`. Behavior:
 - Missing files (nonexistent paths, missing Wavefile)
 - Network errors (HTTP 404/500 via mock servers)
 - Path traversal (tar.gz extraction security)
-- Symlink resolution (current -> version directory)
+- Direct plugin resolution (no version directory)
 - Concurrent-safe (each test uses `t.TempDir()`)
 - Unicode and special characters in config values
 

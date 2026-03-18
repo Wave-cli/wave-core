@@ -208,19 +208,11 @@ func ExtractTarGz(r io.Reader, destDir string) error {
 // 1. Fetch release from GitHub
 // 2. Download binary archive + Waveplugin
 // 3. Extract to plugins dir
-// 4. Create current symlink
 func (c *Client) InstallPlugin(org, name, version, pluginsDir string) error {
 	// 1. Fetch release
 	release, err := c.FetchRelease(org, name, version)
 	if err != nil {
 		return fmt.Errorf("fetching release: %w", err)
-	}
-
-	// Extract version from tag
-	ver := strings.TrimPrefix(release.TagName, "v")
-	versionTag := release.TagName
-	if !strings.HasPrefix(versionTag, "v") {
-		versionTag = "v" + versionTag
 	}
 
 	// 2. Select binary asset
@@ -229,10 +221,10 @@ func (c *Client) InstallPlugin(org, name, version, pluginsDir string) error {
 		return fmt.Errorf("selecting binary: %w", err)
 	}
 
-	// 3. Set up directories - now directly under plugins/<name>/<version>
-	versionDir := filepath.Join(pluginsDir, name, "v"+ver)
-	binDir := filepath.Join(versionDir, "bin")
-	assetsDir := filepath.Join(versionDir, "assets")
+	// 3. Set up directories - now directly under plugins/<name>
+	pluginDir := filepath.Join(pluginsDir, name)
+	binDir := filepath.Join(pluginDir, "bin")
+	assetsDir := filepath.Join(pluginDir, "assets")
 	if err := os.MkdirAll(binDir, 0755); err != nil {
 		return fmt.Errorf("creating bin dir: %w", err)
 	}
@@ -265,17 +257,10 @@ func (c *Client) InstallPlugin(org, name, version, pluginsDir string) error {
 	// 5. Download Waveplugin
 	wpAsset := FindWavepluginAsset(release.Assets)
 	if wpAsset != nil {
-		wpDest := filepath.Join(versionDir, "Waveplugin")
+		wpDest := filepath.Join(pluginDir, "Waveplugin")
 		if err := c.DownloadFile(wpAsset.URL, wpDest); err != nil {
 			return fmt.Errorf("downloading Waveplugin: %w", err)
 		}
-	}
-
-	// 6. Create/update current symlink - now directly under plugins/<name>/current
-	currentLink := filepath.Join(pluginsDir, name, "current")
-	os.Remove(currentLink) // remove old symlink if exists
-	if err := os.Symlink(versionDir, currentLink); err != nil {
-		return fmt.Errorf("creating current symlink: %w", err)
 	}
 
 	return nil

@@ -12,13 +12,13 @@ import (
 // --- BuildEnv ---
 
 func TestBuildEnv(t *testing.T) {
-	env := BuildEnv("flow", "1.2.0", "/home/user/.wave/plugins/wave-cli/flow/current", "/path/to/project")
+	env := BuildEnv("flow", "1.2.0", "/home/user/.wave/plugins/flow", "/path/to/project")
 
 	expected := map[string]string{
 		"WAVE_PLUGIN_NAME":    "flow",
 		"WAVE_PLUGIN_VERSION": "1.2.0",
-		"WAVE_PLUGIN_DIR":     "/home/user/.wave/plugins/wave-cli/flow/current",
-		"WAVE_PLUGIN_ASSETS":  "/home/user/.wave/plugins/wave-cli/flow/current/assets",
+		"WAVE_PLUGIN_DIR":     "/home/user/.wave/plugins/flow",
+		"WAVE_PLUGIN_ASSETS":  "/home/user/.wave/plugins/flow/assets",
 		"WAVE_PROJECT_ROOT":   "/path/to/project",
 	}
 

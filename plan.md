@@ -266,7 +266,7 @@ When the user runs `wave flow dev`:
 1. Cobra sees "flow" is not a built-in command
 2. Root command's RunE triggers plugin discovery
 3. Look up "flow" in installed plugins -> found as "wave-cli/flow" v1.2.0
-4. Resolve binary: ~/.wave/plugins/wave-cli/flow/current/bin/flow
+4. Resolve binary: ~/.wave/plugins/flow/bin/flow
 5. Read Waveplugin metadata for the active version
 6. Build execution context:
    - argv:        ["flow", "dev"]
@@ -274,8 +274,8 @@ When the user runs `wave flow dev`:
    - env:
        WAVE_PLUGIN_NAME=flow
        WAVE_PLUGIN_VERSION=1.2.0
-       WAVE_PLUGIN_DIR=~/.wave/plugins/wave-cli/flow/current/
-       WAVE_PLUGIN_ASSETS=~/.wave/plugins/wave-cli/flow/current/assets/
+       WAVE_PLUGIN_DIR=~/.wave/plugins/flow/
+       WAVE_PLUGIN_ASSETS=~/.wave/plugins/flow/assets/
        WAVE_PROJECT_ROOT=/path/to/project
 7. Fork/exec the binary
 8. Stream stdout/stderr to terminal in real-time
@@ -293,7 +293,7 @@ type ExecResult struct {
 }
 
 func Execute(pluginName string, args []string, cfg *config.Config) (*ExecResult, error) {
-    binPath := registry.Resolve(pluginName)  // -> ~/.wave/plugins/<org>/<name>/current/bin/<name>
+    binPath := registry.Resolve(pluginName)  // -> ~/.wave/plugins/<name>/bin/<name>
 
     // Serialize the plugin's config section as JSON via stdin
     pluginConfig := cfg.Sections[pluginName]

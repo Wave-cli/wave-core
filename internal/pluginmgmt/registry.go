@@ -2,12 +2,12 @@ package pluginmgmt
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
 // Registry manages installed plugins under a plugins directory.
-// Layout: <pluginsDir>/<name>/<version>/bin/<name>
-// A "current" symlink points to the active version directory.
+// Layout: <pluginsDir>/<name>/bin/<name>
 type Registry struct {
 	pluginsDir string
 }
@@ -24,8 +24,8 @@ func NewRegistry(pluginsDir string) *Registry {
 	return &Registry{pluginsDir: pluginsDir}
 }
 
-// ResolveBinary returns the absolute path to the installed plugin binary
-// via the "current" symlink: <pluginsDir>/<name>/current/bin/<name>.
+// ResolveBinary returns the absolute path to the installed plugin binary:
+// <pluginsDir>/<name>/bin/<name>.
 func (r *Registry) ResolveBinary(fullName string) (string, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
@@ -33,20 +33,17 @@ func (r *Registry) ResolveBinary(fullName string) (string, error) {
 	}
 
 	// Use only the plugin name, not org/name
-	binPath := filepath.Join(r.pluginsDir, ref.Name, "current", "bin", ref.Name)
+	binPath := filepath.Join(r.pluginsDir, ref.Name, "bin", ref.Name)
 
-	// Verify the symlink chain is valid by resolving it.
-	resolved, err := filepath.EvalSymlinks(binPath)
-	if err != nil {
+	if _, err := os.Stat(binPath); err != nil {
 		return "", fmt.Errorf("plugin %q not installed: %w", fullName, err)
 	}
-	_ = resolved // we return the symlink-based path for consistency
 
 	return binPath, nil
 }
 
-// ResolveAssets returns the path to the plugin's assets directory
-// via the "current" symlink: <pluginsDir>/<name>/current/assets.
+// ResolveAssets returns the path to the plugin's assets directory:
+// <pluginsDir>/<name>/assets.
 func (r *Registry) ResolveAssets(fullName string) (string, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
@@ -54,10 +51,9 @@ func (r *Registry) ResolveAssets(fullName string) (string, error) {
 	}
 
 	// Use only the plugin name, not org/name
-	assetsPath := filepath.Join(r.pluginsDir, ref.Name, "current", "assets")
+	assetsPath := filepath.Join(r.pluginsDir, ref.Name, "assets")
 
-	// Verify the symlink chain is valid.
-	if _, err := filepath.EvalSymlinks(assetsPath); err != nil {
+	if _, err := os.Stat(assetsPath); err != nil {
 		return "", fmt.Errorf("plugin %q assets not found: %w", fullName, err)
 	}
 
@@ -65,7 +61,7 @@ func (r *Registry) ResolveAssets(fullName string) (string, error) {
 }
 
 // ReadWaveplugin reads and parses the Waveplugin metadata file for an
-// installed plugin via the "current" symlink.
+// installed plugin.
 func (r *Registry) ReadWaveplugin(fullName string) (*Waveplugin, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
@@ -73,7 +69,7 @@ func (r *Registry) ReadWaveplugin(fullName string) (*Waveplugin, error) {
 	}
 
 	// Use only the plugin name, not org/name
-	wpPath := filepath.Join(r.pluginsDir, ref.Name, "current", "Waveplugin")
+	wpPath := filepath.Join(r.pluginsDir, ref.Name, "Waveplugin")
 	return ParseWaveplugin(wpPath)
 }
 

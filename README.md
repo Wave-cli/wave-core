@@ -74,7 +74,7 @@ Plugins are standalone binaries that follow a simple protocol:
 - **Environment**: `WAVE_PLUGIN_NAME`, `WAVE_PLUGIN_VERSION`, `WAVE_PLUGIN_DIR`, `WAVE_PLUGIN_ASSETS`, `WAVE_PROJECT_ROOT`
 - **Errors**: Structured JSON on stderr (`{"wave_error": true, "code": "...", "message": "..."}`)
 
-Plugins are installed to `~/.wave/plugins/<org>/<name>/<version>/` with a `current` symlink pointing to the active version.
+Plugins are installed to `~/.wave/plugins/<name>/` (single version, no org folder).
 
 ## Local flow plugin testing
 
@@ -89,7 +89,7 @@ go build -o bin/flow .
 mkdir -p ~/.wave/plugins/wave-cli/flow/v0.1.0/bin
 cp bin/flow ~/.wave/plugins/wave-cli/flow/v0.1.0/bin/flow
 cp Waveplugin ~/.wave/plugins/wave-cli/flow/v0.1.0/Waveplugin
-ln -sfn ~/.wave/plugins/wave-cli/flow/v0.1.0 ~/.wave/plugins/wave-cli/flow/current
+cp /path/to/flow ~/.wave/plugins/flow/bin/flow
 ```
 
 Then add a `[flow]` section in your Wavefile and run:

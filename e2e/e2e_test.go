@@ -71,10 +71,10 @@ func setupFakeWaveHome(t *testing.T, echoBinPath string) (homeDir string, plugin
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
 	// Install fake plugin: wave-cli/echo v1.0.0
-	// Directory structure: plugins/<name>/<version> (no org folder)
-	versionDir := filepath.Join(pluginsDir, "echo", "v1.0.0")
-	binDir := filepath.Join(versionDir, "bin")
-	assetsDir := filepath.Join(versionDir, "assets")
+	// Directory structure: plugins/<name> (single version, no org folder)
+	pluginDir := filepath.Join(pluginsDir, "echo")
+	binDir := filepath.Join(pluginDir, "bin")
+	assetsDir := filepath.Join(pluginDir, "assets")
 	os.MkdirAll(binDir, 0755)
 	os.MkdirAll(assetsDir, 0755)
 
@@ -95,11 +95,7 @@ homepage = "https://github.com/wave-cli/echo"
 [compatibility]
 min_wave_version = "0.1.0"
 `
-	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), []byte(wpContent), 0644)
-
-	// Create current symlink
-	currentLink := filepath.Join(pluginsDir, "echo", "current")
-	os.Symlink(versionDir, currentLink)
+	os.WriteFile(filepath.Join(pluginDir, "Waveplugin"), []byte(wpContent), 0644)
 
 	// Update global config with plugin
 	gc.Plugins["wave-cli/echo"] = "1.0.0"
@@ -342,8 +338,8 @@ func TestE2E_PluginRegistryResolution(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveBinary failed: %v", err)
 	}
-	if !strings.Contains(binPath, "current/bin/echo") {
-		t.Errorf("BinPath = %q, should contain current/bin/echo", binPath)
+	if !strings.Contains(binPath, "bin/echo") {
+		t.Errorf("BinPath = %q, should contain bin/echo", binPath)
 	}
 
 	// Resolve assets
@@ -351,7 +347,7 @@ func TestE2E_PluginRegistryResolution(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveAssets failed: %v", err)
 	}
-	if !strings.Contains(assetsPath, "current/assets") {
+	if !strings.Contains(assetsPath, "assets") {
 		t.Errorf("AssetsPath = %q", assetsPath)
 	}
 
@@ -670,9 +666,9 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
 	// Install flow plugin: wave-cli/flow v0.1.0
-	// Directory structure: plugins/<name>/<version> (no org folder)
-	versionDir := filepath.Join(pluginsDir, "flow", "v0.1.0")
-	binDir := filepath.Join(versionDir, "bin")
+	// Directory structure: plugins/<name> (single version, no org folder)
+	pluginDir := filepath.Join(pluginsDir, "flow")
+	binDir := filepath.Join(pluginDir, "bin")
 	os.MkdirAll(binDir, 0755)
 
 	// Copy flow binary
@@ -685,11 +681,7 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 	flowSrc := filepath.Join(filepath.Dir(projectRoot), "wave-flow")
 
 	wpData, _ := os.ReadFile(filepath.Join(flowSrc, "Waveplugin"))
-	os.WriteFile(filepath.Join(versionDir, "Waveplugin"), wpData, 0644)
-
-	// Create current symlink
-	currentLink := filepath.Join(pluginsDir, "flow", "current")
-	os.Symlink(versionDir, currentLink)
+	os.WriteFile(filepath.Join(pluginDir, "Waveplugin"), wpData, 0644)
 
 	// Update global config
 	gc.Plugins["wave-cli/flow"] = "0.1.0"

@@ -206,8 +206,8 @@ func TestFormatWaveErrorCodeFormat(t *testing.T) {
 func TestGetPluginEnv(t *testing.T) {
 	os.Setenv("WAVE_PLUGIN_NAME", "flow")
 	os.Setenv("WAVE_PLUGIN_VERSION", "1.2.0")
-	os.Setenv("WAVE_PLUGIN_DIR", "/home/.wave/plugins/wave-cli/flow/current")
-	os.Setenv("WAVE_PLUGIN_ASSETS", "/home/.wave/plugins/wave-cli/flow/current/assets")
+	os.Setenv("WAVE_PLUGIN_DIR", "/home/.wave/plugins/flow")
+	os.Setenv("WAVE_PLUGIN_ASSETS", "/home/.wave/plugins/flow/assets")
 	os.Setenv("WAVE_PROJECT_ROOT", "/projects/my-app")
 	defer func() {
 		os.Unsetenv("WAVE_PLUGIN_NAME")
@@ -224,10 +224,10 @@ func TestGetPluginEnv(t *testing.T) {
 	if env.Version != "1.2.0" {
 		t.Errorf("Version = %q", env.Version)
 	}
-	if env.Dir != "/home/.wave/plugins/wave-cli/flow/current" {
+	if env.Dir != "/home/.wave/plugins/flow" {
 		t.Errorf("Dir = %q", env.Dir)
 	}
-	if env.Assets != "/home/.wave/plugins/wave-cli/flow/current/assets" {
+	if env.Assets != "/home/.wave/plugins/flow/assets" {
 		t.Errorf("Assets = %q", env.Assets)
 	}
 	if env.ProjectRoot != "/projects/my-app" {
@@ -242,8 +242,8 @@ func TestGetPluginEnv(t *testing.T) {
 func TestInitFrom(t *testing.T) {
 	os.Setenv("WAVE_PLUGIN_NAME", "flow")
 	os.Setenv("WAVE_PLUGIN_VERSION", "0.1.0")
-	os.Setenv("WAVE_PLUGIN_DIR", "/tmp/plugins/wave-cli/flow/current")
-	os.Setenv("WAVE_PLUGIN_ASSETS", "/tmp/plugins/wave-cli/flow/current/assets")
+	os.Setenv("WAVE_PLUGIN_DIR", "/tmp/plugins/flow")
+	os.Setenv("WAVE_PLUGIN_ASSETS", "/tmp/plugins/flow/assets")
 	os.Setenv("WAVE_PROJECT_ROOT", "/tmp/project")
 	defer func() {
 		os.Unsetenv("WAVE_PLUGIN_NAME")

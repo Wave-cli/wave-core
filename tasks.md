@@ -48,7 +48,7 @@
   - Tests: `downloader_test.go`
   - Functions: `NewClient`, `FetchRelease`, `SelectAsset`, `Download`, `ExtractTarGz`, `InstallPlugin`
 
-- [x] `internal/runner/` - Plugin executor (fork/exec, stdin JSON, env vars)
+- [x] `internal/executor/` - Plugin executor (fork/exec, stdin JSON, env vars)
   - Tests: `runner_test.go`
   - Functions: `Execute`, `BuildEnv`, `BuildStdin`
 

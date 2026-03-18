@@ -126,8 +126,8 @@ wave-core sets these environment variables before executing your plugin:
 |----------|-------------|---------|
 | `WAVE_PLUGIN_NAME` | Plugin short name | `myflow` |
 | `WAVE_PLUGIN_VERSION` | Installed version | `1.0.0` |
-| `WAVE_PLUGIN_DIR` | Plugin installation directory | `~/.wave/plugins/my-org/myflow/current` |
-| `WAVE_PLUGIN_ASSETS` | Plugin assets directory | `~/.wave/plugins/my-org/myflow/current/assets` |
+| `WAVE_PLUGIN_DIR` | Plugin installation directory | `~/.wave/plugins/myflow` |
+| `WAVE_PLUGIN_ASSETS` | Plugin assets directory | `~/.wave/plugins/myflow/assets` |
 | `WAVE_PROJECT_ROOT` | Project root (where Wavefile is) | `/home/user/my-project` |
 
 ### Arguments
@@ -183,10 +183,10 @@ func TestDevCommand(t *testing.T) {
 Build your plugin and test it with wave-core's runner:
 
 ```go
-import "github.com/wave-cli/wave-core/internal/runner"
+import "github.com/wave-cli/wave-core/internal/executor"
 
 func TestPluginExecution(t *testing.T) {
-    result, err := runner.Execute(
+    result, err := executor.Execute(
         "/path/to/myflow",
         []string{"dev"},
         map[string]any{"port": int64(3000)},
