@@ -61,7 +61,8 @@ wave-core/
 ├── go.mod
 ├── go.sum
 ├── main.go                  # Entry point — calls cmd.Execute()
-└── plan.md
+└── plan/
+    └── plan.md
 ```
 
 ---

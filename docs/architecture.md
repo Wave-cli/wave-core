@@ -30,8 +30,9 @@ wave-core/
 ├── e2e/                        # End-to-end integration tests
 ├── testdata/plugins/echo/      # Test echo plugin
 ├── main.go                     # Entry point
-├── plan.md                     # Full architecture plan
-└── tasks.md                    # Task tracker
+├── plan/                        # Planning docs
+│   ├── plan.md                  # Full architecture plan
+│   └── tasks.md                 # Task tracker
 ```
 
 ## Module Dependency Graph
