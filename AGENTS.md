@@ -10,72 +10,50 @@ wave-core is a Go-based modular CLI orchestrator powered by plugins. Plugins are
 - **Module**: `github.com/wave-cli/wave-core`
 - **CLI framework**: Cobra + Viper
 - **Config format**: TOML (via BurntSushi/toml)
+- **Current version**: v0.2.1
+
+## Quick Start
+
+```bash
+# Build and run
+just build && ./bin/wave version
+
+# Run tests
+just test
+
+# Full CI (fmt + vet + test + build)
+just ci
+```
 
 ## Build / Lint / Test Commands
 
 ### Via `just` (preferred)
 
 ```bash
-# Run all tests
-just test
-
-# Run tests with verbose output
-just test-v
-
-# Run tests with coverage report
-just test-cover
-
-# Run unit tests only (skip e2e)
-just test-unit
-
-# Run e2e tests only
-just test-e2e
-
-# Run tests for a specific package
-just test-pkg config
-
-# Format + vet
-just lint
-
-# Full CI pipeline
-just ci
-
-# Build binary
-just build
-
-# Run wave with args
-just run version
+just test           # Run all tests
+just test-v         # Run tests with verbose output
+just test-cover     # Run tests with coverage report
+just test-unit      # Run unit tests only (skip e2e)
+just test-e2e       # Run e2e tests only
+just test-pkg config # Run tests for a specific package
+just lint           # Format + vet
+just ci             # Full CI pipeline
+just build          # Build binary
+just run version    # Run wave with args
 ```
 
 ### Via `go` directly
 
 ```bash
-# Run all tests
-go test ./...
-
-# Run all tests with verbose output
-go test -v ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run a specific test by name
-go test ./internal/errors/ -run TestParseStderrStructured -v
-
-# Run a specific package
-go test -v ./internal/config/
-
-# Run e2e tests
-go test -v ./e2e/...
-
-# Format
-go fmt ./...
-
-# Vet
-go vet ./...
-
-# Build
-go build -o bin/wave .
+go test ./...                              # Run all tests
+go test -v ./...                           # Run all tests with verbose output
+go test -cover ./...                       # Run tests with coverage
+go test ./internal/errors/ -run TestParse -v  # Run specific test
+go test -v ./internal/config/              # Run specific package
+go test -v ./e2e/...                       # Run e2e tests
+go fmt ./...                               # Format
+go vet ./...                               # Vet
+go build -o bin/wave .                     # Build
 ```
 
 ## Code Style
@@ -141,6 +119,7 @@ func Execute(...) (*Result, error) { ... }
 
 - Wrap errors with `fmt.Errorf("context: %w", err)` for Go-level errors.
 - Return structured `*PluginError` for plugin-level errors (defined in `internal/errors/protocol.go`).
+- Users see only the error message by default; use `--debug` flag to show full JSON error structure.
 - Never silently ignore errors with `_`: always handle or log.
 - In CLI commands, prefer `RunE` functions that return errors.
 - Exit non-zero via `os.Exit(code)` for CLI-level failures after error reporting.
@@ -229,3 +208,24 @@ Always run `go mod tidy` before committing changes to `go.mod` or `go.sum`.
 ## CI Pipeline
 
 The full CI pipeline runs: `fmt` -> `vet` -> `test` -> `build`. Run `just ci` locally before pushing.
+
+## Key Workflows
+
+### Adding a new command
+
+1. Create `cmd/<command>.go` with a `NewXxxCmd()` function
+2. Register in `cmd/root.go` via `rootCmd.AddCommand(NewXxxCmd())`
+3. Add tests in `cmd/<command>_test.go` or `e2e/e2e_test.go`
+
+### Modifying error handling
+
+1. Error protocol is in `internal/errors/protocol.go`
+2. Error formatting is in `internal/errors/handler.go`
+3. Remember: simple message for users, full JSON with `--debug` flag
+4. Update tests in `internal/errors/errors_test.go`
+
+### Working with plugins
+
+1. Plugins are registered dynamically from `~/.wave/config`
+2. Plugin execution flows through `internal/executor/runner.go`
+3. Plugin SDK is in `pkg/sdk/sdk.go` for plugin authors
