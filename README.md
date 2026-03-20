@@ -20,6 +20,14 @@ A modular CLI orchestrator powered by plugins. Plugins are standalone binaries i
 
 ## Install
 
+### Via bash (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Wave-cli/wave-core/main/install.sh | bash
+```
+
+### Via Go
+
 ```bash
 go install github.com/wave-cli/wave-core@latest
 ```
@@ -66,40 +74,6 @@ Each section after `[project]` maps to an installed plugin. wave-core passes the
 | `wave config` | Show global configuration |
 | `wave version` | Print version info |
 
-## Plugin architecture
-
-Plugins are standalone binaries that follow a simple protocol:
-
-- **Config**: JSON on stdin (from the Wavefile section)
-- **Environment**: `WAVE_PLUGIN_NAME`, `WAVE_PLUGIN_VERSION`, `WAVE_PLUGIN_DIR`, `WAVE_PLUGIN_ASSETS`, `WAVE_PROJECT_ROOT`
-- **Errors**: Structured JSON on stderr (`{"wave_error": true, "code": "...", "message": "..."}`)
-
-Plugins are installed to `~/.wave/plugins/<name>/` (single version, no org folder).
-
-## Local flow plugin testing
-
-Use this when you are developing `wave-flow` locally and want to run it through `wave` without publishing a release:
-
-```bash
-# Build the plugin (from the sibling repo)
-cd ../wave-flow
-go build -o bin/flow .
-
-# Install into local wave plugin dir
-mkdir -p ~/.wave/plugins/wave-cli/flow/v0.1.0/bin
-cp bin/flow ~/.wave/plugins/wave-cli/flow/v0.1.0/bin/flow
-cp Waveplugin ~/.wave/plugins/wave-cli/flow/v0.1.0/Waveplugin
-cp /path/to/flow ~/.wave/plugins/flow/bin/flow
-```
-
-Then add a `[flow]` section in your Wavefile and run:
-
-```bash
-wave flow --list
-wave flow build
-```
-
-## Using flow in this repo
 
 This repository includes a `Wavefile` that mirrors common `just` recipes. If you have the flow plugin installed, you can run the usual dev tasks via:
 
