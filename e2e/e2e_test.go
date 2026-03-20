@@ -304,22 +304,25 @@ func TestE2E_ErrorFormatDisplay(t *testing.T) {
 		Details:   "check network connectivity",
 	}
 
-	output := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
-
-	if !strings.Contains(output, "DEPLOY_FAILED") {
+	// Test debug mode - should return JSON
+	debugOutput := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
+	if !strings.Contains(debugOutput, "wave_error") {
+		t.Error("Debug mode should contain JSON with wave_error")
+	}
+	if !strings.Contains(debugOutput, "DEPLOY_FAILED") {
 		t.Error("Should contain error code")
 	}
-	if !strings.Contains(output, "deployment timed out") {
+	if !strings.Contains(debugOutput, "deployment timed out") {
 		t.Error("Should contain message")
 	}
-	if !strings.Contains(output, "check network connectivity") {
-		t.Error("Should contain details")
+
+	// Test simple mode - should return colored "code: message\ndetails"
+	simpleOutput := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log", false)
+	if !strings.Contains(simpleOutput, "DEPLOY_FAILED: deployment timed out") {
+		t.Errorf("Simple mode should have 'code: message' format, got: %s", simpleOutput)
 	}
-	if !strings.Contains(output, "echo v1.0.0") {
-		t.Error("Should contain plugin name and version")
-	}
-	if !strings.Contains(output, "/tmp/logs/2026-03-15.log") {
-		t.Error("Should contain log path")
+	if !strings.Contains(simpleOutput, "check network connectivity") {
+		t.Error("Simple mode should contain details")
 	}
 }
 
@@ -813,8 +816,8 @@ func TestE2E_FlowSchemaValidation(t *testing.T) {
 	if wp.Plugin.Name != "flow" {
 		t.Errorf("Plugin name = %q, want 'flow'", wp.Plugin.Name)
 	}
-	if wp.Plugin.Version != "0.2.0" {
-		t.Errorf("Plugin version = %q, want '0.2.0'", wp.Plugin.Version)
+	if wp.Plugin.Version != "0.2.3" {
+		t.Errorf("Plugin version = %q, want '0.2.3'", wp.Plugin.Version)
 	}
 }
 

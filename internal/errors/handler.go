@@ -6,46 +6,49 @@ import (
 	"strings"
 )
 
+// ANSI color codes
+const (
+	colorRed   = "\033[31m"
+	colorReset = "\033[0m"
+)
+
 // FormatError renders a PluginError into a human-friendly string for terminal display.
-// When debug is true, it shows the full JSON error structure.
-// When debug is false, it shows only the user-friendly message.
+// When debug is true, it prints the raw JSON to stderr.
+// When debug is false, it shows a colored user-friendly message.
 func FormatError(pluginName, pluginVersion string, pe *PluginError, logPath string, debug bool) string {
 	if debug {
-		return formatDebugError(pluginName, pluginVersion, pe, logPath)
+		return formatDebugError(pe)
 	}
 	return formatSimpleError(pe)
 }
 
-// formatSimpleError returns only the error message for normal users.
+// formatSimpleError returns a colored, user-friendly error message.
+// Format:
+//   - With message: "error code: message\ndetails" (all in red)
+//   - Without message: "error code\ndetails" (all in red)
+//   - Details only shown if present
 func formatSimpleError(pe *PluginError) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s", pe.Message)
-	if pe.Details != "" {
-		fmt.Fprintf(&b, "\n%s", pe.Details)
+
+	// Build the error line
+	if pe.Message != "" {
+		fmt.Fprintf(&b, "%s%s: %s%s", colorRed, pe.Code, pe.Message, colorReset)
+	} else {
+		fmt.Fprintf(&b, "%s%s%s", colorRed, pe.Code, colorReset)
 	}
+
+	// Add details on a new line if present
+	if pe.Details != "" {
+		fmt.Fprintf(&b, "\n%s%s%s", colorRed, pe.Details, colorReset)
+	}
+
 	return b.String()
 }
 
-// formatDebugError returns the full error structure for debugging.
-func formatDebugError(pluginName, pluginVersion string, pe *PluginError, logPath string) string {
-	var b strings.Builder
-
-	// Show full JSON structure
-	jsonBytes, _ := json.MarshalIndent(pe, "  ", "  ")
-	fmt.Fprintf(&b, "ERROR [%s]\n", pe.Code)
-	fmt.Fprintf(&b, "  %s\n", string(jsonBytes))
-
-	fmt.Fprintf(&b, "\n  Plugin: %s", pluginName)
-	if pluginVersion != "" {
-		fmt.Fprintf(&b, " v%s", pluginVersion)
-	}
-	fmt.Fprintln(&b)
-
-	if logPath != "" {
-		fmt.Fprintf(&b, "  Logged: %s\n", logPath)
-	}
-
-	return b.String()
+// formatDebugError returns the raw JSON error for debugging.
+func formatDebugError(pe *PluginError) string {
+	jsonBytes, _ := json.Marshal(pe)
+	return string(jsonBytes)
 }
 
 // ParseStderr scans stderr output for a structured wave error JSON.

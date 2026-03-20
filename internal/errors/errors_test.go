@@ -160,55 +160,83 @@ func TestLogErrorAppendsMultiple(t *testing.T) {
 
 // --- Handler / Format tests ---
 
-func TestFormatErrorStructured(t *testing.T) {
+func TestFormatErrorDebugMode(t *testing.T) {
 	pe := &PluginError{
-		Code:    "FLOW_CRASH",
-		Message: "plugin crashed",
-		Details: "check logs",
+		WaveError: true,
+		Code:      "FLOW_CRASH",
+		Message:   "plugin crashed",
+		Details:   "check logs",
 	}
 
-	// Test debug mode (shows full error structure)
+	// Debug mode shows raw JSON
 	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
+	if !strings.Contains(out, "wave_error") {
+		t.Errorf("Debug mode should contain JSON with wave_error, got:\n%s", out)
+	}
 	if !strings.Contains(out, "FLOW_CRASH") {
 		t.Errorf("Should contain error code, got:\n%s", out)
 	}
 	if !strings.Contains(out, "plugin crashed") {
 		t.Errorf("Should contain message, got:\n%s", out)
 	}
-	if !strings.Contains(out, "flow") {
-		t.Errorf("Should contain plugin name, got:\n%s", out)
-	}
 }
 
-func TestFormatErrorWithoutDetails(t *testing.T) {
-	pe := &PluginError{
-		Code:    "SIMPLE",
-		Message: "oops",
-	}
-	// Test debug mode
-	out := FormatError("test", "0.5.0", pe, "", true)
-	if !strings.Contains(out, "SIMPLE") {
-		t.Errorf("Should contain error code, got:\n%s", out)
-	}
-}
-
-func TestFormatErrorSimpleMode(t *testing.T) {
+func TestFormatErrorSimpleModeWithMessage(t *testing.T) {
 	pe := &PluginError{
 		Code:    "USER_ERR",
 		Message: "something went wrong",
 		Details: "try again",
 	}
 
-	// Test simple mode (user-friendly, no JSON)
+	// Simple mode: "code: message\ndetails"
 	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log", false)
-	if !strings.Contains(out, "something went wrong") {
-		t.Errorf("Should contain message, got:\n%s", out)
+	if !strings.Contains(out, "USER_ERR: something went wrong") {
+		t.Errorf("Should contain 'code: message' format, got:\n%s", out)
 	}
 	if !strings.Contains(out, "try again") {
 		t.Errorf("Should contain details, got:\n%s", out)
 	}
-	// Should NOT contain error code in simple mode
-	if strings.Contains(out, "USER_ERR") {
-		t.Errorf("Should NOT contain error code in simple mode, got:\n%s", out)
+}
+
+func TestFormatErrorSimpleModeWithoutMessage(t *testing.T) {
+	pe := &PluginError{
+		Code:    "SIMPLE_ERR",
+		Message: "",
+		Details: "some details",
+	}
+
+	// Simple mode without message: "code\ndetails"
+	out := FormatError("test", "0.5.0", pe, "", false)
+	if !strings.Contains(out, "SIMPLE_ERR") {
+		t.Errorf("Should contain error code, got:\n%s", out)
+	}
+	// Should NOT have colon when message is empty
+	if strings.Contains(out, "SIMPLE_ERR:") {
+		t.Errorf("Should NOT have colon when message is empty, got:\n%s", out)
+	}
+	if !strings.Contains(out, "some details") {
+		t.Errorf("Should contain details, got:\n%s", out)
+	}
+}
+
+func TestFormatErrorSimpleModeWithoutDetails(t *testing.T) {
+	pe := &PluginError{
+		Code:    "NO_DETAILS",
+		Message: "error occurred",
+	}
+
+	// Simple mode without details: just "code: message"
+	out := FormatError("test", "0.5.0", pe, "", false)
+	if !strings.Contains(out, "NO_DETAILS: error occurred") {
+		t.Errorf("Should contain 'code: message' format, got:\n%s", out)
+	}
+	// Should not have extra newlines for missing details
+	if strings.Count(out, "\n") > 0 {
+		// Strip ANSI codes for comparison
+		stripped := strings.ReplaceAll(out, "\033[31m", "")
+		stripped = strings.ReplaceAll(stripped, "\033[0m", "")
+		if strings.Contains(stripped, "\n") && strings.TrimSpace(strings.Split(stripped, "\n")[1]) != "" {
+			t.Errorf("Should not have content after first line when no details, got:\n%s", out)
+		}
 	}
 }
