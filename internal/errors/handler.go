@@ -1,20 +1,39 @@
 package errors
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
 // FormatError renders a PluginError into a human-friendly string for terminal display.
-func FormatError(pluginName, pluginVersion string, pe *PluginError, logPath string) string {
+// When debug is true, it shows the full JSON error structure.
+// When debug is false, it shows only the user-friendly message.
+func FormatError(pluginName, pluginVersion string, pe *PluginError, logPath string, debug bool) string {
+	if debug {
+		return formatDebugError(pluginName, pluginVersion, pe, logPath)
+	}
+	return formatSimpleError(pe)
+}
+
+// formatSimpleError returns only the error message for normal users.
+func formatSimpleError(pe *PluginError) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s", pe.Message)
+	if pe.Details != "" {
+		fmt.Fprintf(&b, "\n%s", pe.Details)
+	}
+	return b.String()
+}
+
+// formatDebugError returns the full error structure for debugging.
+func formatDebugError(pluginName, pluginVersion string, pe *PluginError, logPath string) string {
 	var b strings.Builder
 
+	// Show full JSON structure
+	jsonBytes, _ := json.MarshalIndent(pe, "  ", "  ")
 	fmt.Fprintf(&b, "ERROR [%s]\n", pe.Code)
-	fmt.Fprintf(&b, "  %s\n", pe.Message)
-
-	if pe.Details != "" {
-		fmt.Fprintf(&b, "\n  %s\n", pe.Details)
-	}
+	fmt.Fprintf(&b, "  %s\n", string(jsonBytes))
 
 	fmt.Fprintf(&b, "\n  Plugin: %s", pluginName)
 	if pluginVersion != "" {

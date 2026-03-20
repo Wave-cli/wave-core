@@ -304,7 +304,7 @@ func TestE2E_ErrorFormatDisplay(t *testing.T) {
 		Details:   "check network connectivity",
 	}
 
-	output := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log")
+	output := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
 
 	if !strings.Contains(output, "DEPLOY_FAILED") {
 		t.Error("Should contain error code")

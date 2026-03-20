@@ -167,7 +167,8 @@ func TestFormatErrorStructured(t *testing.T) {
 		Details: "check logs",
 	}
 
-	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log")
+	// Test debug mode (shows full error structure)
+	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
 	if !strings.Contains(out, "FLOW_CRASH") {
 		t.Errorf("Should contain error code, got:\n%s", out)
 	}
@@ -184,8 +185,30 @@ func TestFormatErrorWithoutDetails(t *testing.T) {
 		Code:    "SIMPLE",
 		Message: "oops",
 	}
-	out := FormatError("test", "0.5.0", pe, "")
+	// Test debug mode
+	out := FormatError("test", "0.5.0", pe, "", true)
 	if !strings.Contains(out, "SIMPLE") {
 		t.Errorf("Should contain error code, got:\n%s", out)
+	}
+}
+
+func TestFormatErrorSimpleMode(t *testing.T) {
+	pe := &PluginError{
+		Code:    "USER_ERR",
+		Message: "something went wrong",
+		Details: "try again",
+	}
+
+	// Test simple mode (user-friendly, no JSON)
+	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log", false)
+	if !strings.Contains(out, "something went wrong") {
+		t.Errorf("Should contain message, got:\n%s", out)
+	}
+	if !strings.Contains(out, "try again") {
+		t.Errorf("Should contain details, got:\n%s", out)
+	}
+	// Should NOT contain error code in simple mode
+	if strings.Contains(out, "USER_ERR") {
+		t.Errorf("Should NOT contain error code in simple mode, got:\n%s", out)
 	}
 }

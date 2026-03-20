@@ -159,9 +159,10 @@ func runPlugin(fullName string, args []string, gc *config.GlobalConfig, pluginsD
 		logsDir := gc.Core.LogsDir
 		errors.LogError(logsDir, ref.Name, pe, args)
 
-		// Format and display
+		// Format and display (show full JSON in debug mode)
 		logFile := filepath.Join(logsDir, "daily.log")
-		printer.Error("%s", errors.FormatError(ref.Name, version, pe, logFile))
+		debug := viper.GetBool("debug")
+		printer.Error("%s", errors.FormatError(ref.Name, version, pe, logFile, debug))
 	}
 
 	if result.ExitCode != 0 {
