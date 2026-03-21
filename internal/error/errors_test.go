@@ -76,6 +76,41 @@ func TestParseStderrMixedOutput(t *testing.T) {
 	}
 }
 
+func TestParseStderrPlainText(t *testing.T) {
+	// Plain text error format: "code: message\ndetails"
+	stderr := "flow-resolve-error: unknown command \"deploy\". Available: build\nRun 'wave flow --list' to see available commands.\n"
+
+	pe := ParseStderr([]byte(stderr))
+	if pe == nil {
+		t.Fatal("Should parse plain text error")
+	}
+	if pe.Code != "flow-resolve-error" {
+		t.Errorf("Code = %q, want flow-resolve-error", pe.Code)
+	}
+	if !strings.Contains(pe.Message, "unknown command") {
+		t.Errorf("Message should contain 'unknown command', got: %q", pe.Message)
+	}
+	if !strings.Contains(pe.Details, "wave flow --list") {
+		t.Errorf("Details should contain 'wave flow --list', got: %q", pe.Details)
+	}
+}
+
+func TestParseStderrPlainTextNoDetails(t *testing.T) {
+	// Plain text error format without details: "code: message"
+	stderr := "flow-config-error: failed to read config\n"
+
+	pe := ParseStderr([]byte(stderr))
+	if pe == nil {
+		t.Fatal("Should parse plain text error without details")
+	}
+	if pe.Code != "flow-config-error" {
+		t.Errorf("Code = %q, want flow-config-error", pe.Code)
+	}
+	if !strings.Contains(pe.Message, "failed to read config") {
+		t.Errorf("Message should contain 'failed to read config', got: %q", pe.Message)
+	}
+}
+
 // --- Logger tests ---
 
 func TestLogErrorCreatesFile(t *testing.T) {
@@ -161,6 +196,10 @@ func TestLogErrorAppendsMultiple(t *testing.T) {
 // --- Handler / Format tests ---
 
 func TestFormatErrorDebugMode(t *testing.T) {
+	// Set WAVE_DEBUG=1 for this test
+	os.Setenv("WAVE_DEBUG", "1")
+	defer os.Unsetenv("WAVE_DEBUG")
+
 	pe := &PluginError{
 		WaveError: true,
 		Code:      "FLOW_CRASH",
@@ -169,7 +208,7 @@ func TestFormatErrorDebugMode(t *testing.T) {
 	}
 
 	// Debug mode shows raw JSON
-	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
+	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log")
 	if !strings.Contains(out, "wave_error") {
 		t.Errorf("Debug mode should contain JSON with wave_error, got:\n%s", out)
 	}
@@ -182,6 +221,9 @@ func TestFormatErrorDebugMode(t *testing.T) {
 }
 
 func TestFormatErrorSimpleModeWithMessage(t *testing.T) {
+	// Ensure WAVE_DEBUG is not set
+	os.Unsetenv("WAVE_DEBUG")
+
 	pe := &PluginError{
 		Code:    "USER_ERR",
 		Message: "something went wrong",
@@ -189,7 +231,7 @@ func TestFormatErrorSimpleModeWithMessage(t *testing.T) {
 	}
 
 	// Simple mode: "code: message\ndetails"
-	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log", false)
+	out := FormatError("flow", "1.0.0", pe, "/tmp/logs/2026-03-15.log")
 	if !strings.Contains(out, "USER_ERR: something went wrong") {
 		t.Errorf("Should contain 'code: message' format, got:\n%s", out)
 	}
@@ -199,6 +241,9 @@ func TestFormatErrorSimpleModeWithMessage(t *testing.T) {
 }
 
 func TestFormatErrorSimpleModeWithoutMessage(t *testing.T) {
+	// Ensure WAVE_DEBUG is not set
+	os.Unsetenv("WAVE_DEBUG")
+
 	pe := &PluginError{
 		Code:    "SIMPLE_ERR",
 		Message: "",
@@ -206,7 +251,7 @@ func TestFormatErrorSimpleModeWithoutMessage(t *testing.T) {
 	}
 
 	// Simple mode without message: "code\ndetails"
-	out := FormatError("test", "0.5.0", pe, "", false)
+	out := FormatError("test", "0.5.0", pe, "")
 	if !strings.Contains(out, "SIMPLE_ERR") {
 		t.Errorf("Should contain error code, got:\n%s", out)
 	}
@@ -220,13 +265,16 @@ func TestFormatErrorSimpleModeWithoutMessage(t *testing.T) {
 }
 
 func TestFormatErrorSimpleModeWithoutDetails(t *testing.T) {
+	// Ensure WAVE_DEBUG is not set
+	os.Unsetenv("WAVE_DEBUG")
+
 	pe := &PluginError{
 		Code:    "NO_DETAILS",
 		Message: "error occurred",
 	}
 
 	// Simple mode without details: just "code: message"
-	out := FormatError("test", "0.5.0", pe, "", false)
+	out := FormatError("test", "0.5.0", pe, "")
 	if !strings.Contains(out, "NO_DETAILS: error occurred") {
 		t.Errorf("Should contain 'code: message' format, got:\n%s", out)
 	}

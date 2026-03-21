@@ -118,8 +118,8 @@ func Execute(...) (*Result, error) { ... }
 ### Error Handling
 
 - Wrap errors with `fmt.Errorf("context: %w", err)` for Go-level errors.
-- Return structured `*PluginError` for plugin-level errors (defined in `internal/errors/protocol.go`).
-- Users see only the error message by default; use `--debug` flag to show full JSON error structure.
+- Return structured `*PluginError` for plugin-level errors (defined in `internal/error/protocol.go`).
+- Users see only the error message by default; set `WAVE_DEBUG=1` to show full JSON error structure.
 - Never silently ignore errors with `_`: always handle or log.
 - In CLI commands, prefer `RunE` functions that return errors.
 - Exit non-zero via `os.Exit(code)` for CLI-level failures after error reporting.
@@ -219,10 +219,10 @@ The full CI pipeline runs: `fmt` -> `vet` -> `test` -> `build`. Run `just ci` lo
 
 ### Modifying error handling
 
-1. Error protocol is in `internal/errors/protocol.go`
-2. Error formatting is in `internal/errors/handler.go`
-3. Remember: simple message for users, full JSON with `--debug` flag
-4. Update tests in `internal/errors/errors_test.go`
+1. Error protocol is in `internal/error/protocol.go`
+2. Error formatting is in `internal/error/handler.go`
+3. Remember: simple message for users, full JSON with `WAVE_DEBUG=1`
+4. Update tests in `internal/error/errors_test.go`
 
 ### Working with plugins
 

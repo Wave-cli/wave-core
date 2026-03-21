@@ -13,7 +13,7 @@ import (
 
 	"github.com/wave-cli/wave-core/internal/bootstrap"
 	"github.com/wave-cli/wave-core/internal/config"
-	"github.com/wave-cli/wave-core/internal/errors"
+	"github.com/wave-cli/wave-core/internal/error"
 	"github.com/wave-cli/wave-core/internal/executor"
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
 )
@@ -304,8 +304,11 @@ func TestE2E_ErrorFormatDisplay(t *testing.T) {
 		Details:   "check network connectivity",
 	}
 
-	// Test debug mode - should return JSON
-	debugOutput := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log", true)
+	// Test debug mode (WAVE_DEBUG=1) - should return JSON
+	os.Setenv("WAVE_DEBUG", "1")
+	debugOutput := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log")
+	os.Unsetenv("WAVE_DEBUG")
+
 	if !strings.Contains(debugOutput, "wave_error") {
 		t.Error("Debug mode should contain JSON with wave_error")
 	}
@@ -316,8 +319,8 @@ func TestE2E_ErrorFormatDisplay(t *testing.T) {
 		t.Error("Should contain message")
 	}
 
-	// Test simple mode - should return colored "code: message\ndetails"
-	simpleOutput := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log", false)
+	// Test simple mode (WAVE_DEBUG not set) - should return colored "code: message\ndetails"
+	simpleOutput := errors.FormatError("echo", "1.0.0", pe, "/tmp/logs/2026-03-15.log")
 	if !strings.Contains(simpleOutput, "DEPLOY_FAILED: deployment timed out") {
 		t.Errorf("Simple mode should have 'code: message' format, got: %s", simpleOutput)
 	}
@@ -767,15 +770,17 @@ func TestE2E_FlowPluginUnknownCommand(t *testing.T) {
 		t.Fatalf("Execute failed: %v", err)
 	}
 
-	// Should fail with structured error
+	// Should fail with non-zero exit code
 	if result.ExitCode == 0 {
 		t.Error("Expected non-zero exit code for unknown command")
 	}
-	if result.PluginError == nil {
-		t.Fatal("Expected structured wave error for unknown command")
+	// Check stderr contains the error code (plain text format)
+	if !strings.Contains(result.Stderr, "flow-resolve-error") {
+		t.Errorf("Expected stderr to contain 'flow-resolve-error', got: %s", result.Stderr)
 	}
-	if result.PluginError.Code != "flow-resolve-error" {
-		t.Errorf("Error code = %q, want flow-resolve-error", result.PluginError.Code)
+	// Should suggest using --list
+	if !strings.Contains(result.Stderr, "wave flow --list") {
+		t.Errorf("Expected stderr to suggest 'wave flow --list', got: %s", result.Stderr)
 	}
 }
 
@@ -816,8 +821,8 @@ func TestE2E_FlowSchemaValidation(t *testing.T) {
 	if wp.Plugin.Name != "flow" {
 		t.Errorf("Plugin name = %q, want 'flow'", wp.Plugin.Name)
 	}
-	if wp.Plugin.Version != "0.2.3" {
-		t.Errorf("Plugin version = %q, want '0.2.3'", wp.Plugin.Version)
+	if wp.Plugin.Version != "0.2.2" {
+		t.Errorf("Plugin version = %q, want '0.2.2'", wp.Plugin.Version)
 	}
 }
 
@@ -834,14 +839,17 @@ func TestE2E_FlowRulesValidation(t *testing.T) {
 		t.Fatalf("Execute failed: %v", err)
 	}
 
+	// Should fail with non-zero exit code
 	if result.ExitCode == 0 {
 		t.Error("Expected non-zero exit for unknown command")
 	}
-	if result.PluginError == nil {
-		t.Fatal("Expected structured error")
+	// Check stderr contains the error code (plain text format)
+	if !strings.Contains(result.Stderr, "flow-resolve-error") {
+		t.Errorf("Expected stderr to contain 'flow-resolve-error', got: %s", result.Stderr)
 	}
-	if result.PluginError.Code != "flow-resolve-error" {
-		t.Errorf("Error code = %q, want 'flow-resolve-error'", result.PluginError.Code)
+	// Should suggest using --list
+	if !strings.Contains(result.Stderr, "wave flow --list") {
+		t.Errorf("Expected stderr to suggest 'wave flow --list', got: %s", result.Stderr)
 	}
 }
 

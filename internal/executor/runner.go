@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	waveerrors "github.com/wave-cli/wave-core/internal/errors"
+	waveerrors "github.com/wave-cli/wave-core/internal/error"
 )
 
 // execCommand is a variable so tests can verify command construction.

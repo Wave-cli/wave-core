@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/wave-cli/wave-core/internal/bootstrap"
 	"github.com/wave-cli/wave-core/internal/config"
-	"github.com/wave-cli/wave-core/internal/errors"
+	"github.com/wave-cli/wave-core/internal/error"
 	"github.com/wave-cli/wave-core/internal/executor"
 	"github.com/wave-cli/wave-core/internal/pluginmgmt"
 	"github.com/wave-cli/wave-core/internal/ui"
@@ -32,8 +32,6 @@ func NewRootCmd() *cobra.Command {
 			level := ui.LevelNormal
 			if viper.GetBool("quiet") {
 				level = ui.LevelQuiet
-			} else if viper.GetBool("debug") {
-				level = ui.LevelDebug
 			} else if viper.GetBool("verbose") {
 				level = ui.LevelVerbose
 			}
@@ -60,12 +58,10 @@ func NewRootCmd() *cobra.Command {
 
 	// Persistent flags bound via Viper
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
-	rootCmd.PersistentFlags().Bool("debug", false, "Debug output")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress non-error output")
 	rootCmd.PersistentFlags().Bool("manual", false, "Run plugin without Wavefile config (manual mode)")
 
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
 	viper.BindPFlag("manual", rootCmd.PersistentFlags().Lookup("manual"))
 
@@ -159,10 +155,9 @@ func runPlugin(fullName string, args []string, gc *config.GlobalConfig, pluginsD
 		logsDir := gc.Core.LogsDir
 		errors.LogError(logsDir, ref.Name, pe, args)
 
-		// Format and display (show full JSON in debug mode)
+		// Format and display (uses WAVE_DEBUG env var for debug mode)
 		logFile := filepath.Join(logsDir, "daily.log")
-		debug := viper.GetBool("debug")
-		printer.Error("%s", errors.FormatError(ref.Name, version, pe, logFile, debug))
+		printer.Error("%s", errors.FormatError(ref.Name, version, pe, logFile))
 	}
 
 	if result.ExitCode != 0 {

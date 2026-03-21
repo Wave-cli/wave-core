@@ -1,6 +1,14 @@
 // Package sdk provides helpers for wave plugin authors.
 // Plugins import this package to read config from stdin,
 // emit structured errors, and access wave environment variables.
+//
+// The SDK is organized into subpackages for modularity:
+//   - sdk/config: Configuration reading and typed access
+//   - sdk/error: Structured error emission
+//   - sdk/env: Wave environment variables
+//   - sdk/version: Project and plugin version reading
+//
+// This main package re-exports common types for convenience.
 package sdk
 
 import (
@@ -9,19 +17,20 @@ import (
 	"io"
 	"os"
 	"sort"
+
+	sdkconfig "github.com/wave-cli/wave-core/pkg/sdk/config"
+	sdkenv "github.com/wave-cli/wave-core/pkg/sdk/env"
+	sdkerror "github.com/wave-cli/wave-core/pkg/sdk/error"
+	sdkversion "github.com/wave-cli/wave-core/pkg/sdk/version"
 )
 
 // PluginEnv holds wave environment variables available to plugins.
-type PluginEnv struct {
-	Name        string // WAVE_PLUGIN_NAME
-	Version     string // WAVE_PLUGIN_VERSION
-	Dir         string // WAVE_PLUGIN_DIR
-	Assets      string // WAVE_PLUGIN_ASSETS
-	ProjectRoot string // WAVE_PROJECT_ROOT
-}
+// Re-exported from sdk/env for convenience.
+type PluginEnv = sdkenv.PluginEnv
 
 // WaveError is the JSON structure emitted to stderr for structured errors.
 // Error codes MUST use lowercase-and-dashes format (e.g. "flow-no-command").
+// Deprecated: Use sdk/error.WaveError instead. Errors are now emitted as plain text.
 type WaveError struct {
 	WaveError bool   `json:"wave_error"`
 	Code      string `json:"code"`
@@ -30,79 +39,8 @@ type WaveError struct {
 }
 
 // Config wraps the raw plugin configuration map and provides typed access.
-// wave-core passes the plugin's entire TOML section as a JSON object on stdin.
-// The plugin receives it as-is — no schema validation, no transformation.
-type Config struct {
-	data map[string]any
-}
-
-// Raw returns the underlying configuration map.
-func (c *Config) Raw() map[string]any {
-	return c.data
-}
-
-// Get returns the value for key and whether it exists.
-func (c *Config) Get(key string) (any, bool) {
-	v, ok := c.data[key]
-	return v, ok
-}
-
-// Has returns true if key exists in the config.
-func (c *Config) Has(key string) bool {
-	_, ok := c.data[key]
-	return ok
-}
-
-// String returns the string value for key, or ("", false) if missing/wrong type.
-func (c *Config) String(key string) (string, bool) {
-	v, ok := c.data[key]
-	if !ok {
-		return "", false
-	}
-	s, ok := v.(string)
-	return s, ok
-}
-
-// Bool returns the bool value for key, or (false, false) if missing/wrong type.
-func (c *Config) Bool(key string) (bool, bool) {
-	v, ok := c.data[key]
-	if !ok {
-		return false, false
-	}
-	b, ok := v.(bool)
-	return b, ok
-}
-
-// Float returns the float64 value for key, or (0, false) if missing/wrong type.
-// JSON numbers are always decoded as float64.
-func (c *Config) Float(key string) (float64, bool) {
-	v, ok := c.data[key]
-	if !ok {
-		return 0, false
-	}
-	f, ok := v.(float64)
-	return f, ok
-}
-
-// Map returns the map value for key, or (nil, false) if missing/wrong type.
-func (c *Config) Map(key string) (map[string]any, bool) {
-	v, ok := c.data[key]
-	if !ok {
-		return nil, false
-	}
-	m, ok := v.(map[string]any)
-	return m, ok
-}
-
-// Keys returns all top-level keys in sorted order.
-func (c *Config) Keys() []string {
-	keys := make([]string, 0, len(c.data))
-	for k := range c.data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
+// Re-exported from sdk/config for convenience.
+type Config = sdkconfig.Config
 
 // Plugin bundles the environment and config for a wave plugin.
 // This is the primary entry point for plugin authors.
@@ -120,12 +58,12 @@ func Init() (*Plugin, error) {
 // InitFrom reads config from the given reader and env vars.
 // Useful for testing.
 func InitFrom(r io.Reader) (*Plugin, error) {
-	cfg, err := ReadConfigFrom(r)
+	cfg, err := sdkconfig.ReadFrom(r)
 	if err != nil {
 		return nil, err
 	}
 	return &Plugin{
-		Env:    GetPluginEnv(),
+		Env:    sdkenv.Get(),
 		Config: cfg,
 	}, nil
 }
@@ -133,47 +71,34 @@ func InitFrom(r io.Reader) (*Plugin, error) {
 // ReadConfig reads the plugin configuration from os.Stdin.
 // wave-core passes the plugin's config section as a JSON object on stdin.
 func ReadConfig() (*Config, error) {
-	return ReadConfigFrom(os.Stdin)
+	return sdkconfig.Read()
 }
 
 // ReadConfigFrom reads plugin configuration from an arbitrary reader.
 // This is useful for testing.
 func ReadConfigFrom(r io.Reader) (*Config, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("reading config from stdin: %w", err)
-	}
-	if len(data) == 0 {
-		return nil, fmt.Errorf("empty config input")
-	}
-
-	var raw map[string]any
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("parsing config JSON: %w", err)
-	}
-
-	return &Config{data: raw}, nil
+	return sdkconfig.ReadFrom(r)
 }
 
 // Err emits a structured wave error to stderr and exits with code 1.
 // Code MUST be lowercase-and-dashes format (e.g. "flow-no-command").
 // Message should be a human-readable description of the error.
 func Err(code, message string) {
-	FormatWaveError(os.Stderr, code, message, "")
-	os.Exit(1)
+	sdkerror.Emit(code, message)
 }
 
 // ErrWithDetails emits a structured wave error with additional details.
 // Code MUST be lowercase-and-dashes format (e.g. "flow-resolve-error").
 // Details provides additional context (suggestions, available commands, etc.).
 func ErrWithDetails(code, message, details string) {
-	FormatWaveError(os.Stderr, code, message, details)
-	os.Exit(1)
+	sdkerror.EmitWithDetails(code, message, details)
 }
 
 // FormatWaveError writes a structured wave error JSON to the given writer.
 // This is the testable version of Err().
+// Deprecated: Use sdk/error.Format instead. Errors are now emitted as plain text.
 func FormatWaveError(w io.Writer, code, message, details string) {
+	// For backwards compatibility, still emit JSON for existing plugins
 	e := WaveError{
 		WaveError: true,
 		Code:      code,
@@ -185,18 +110,92 @@ func FormatWaveError(w io.Writer, code, message, details string) {
 
 // GetPluginEnv reads wave environment variables set by wave-core.
 func GetPluginEnv() PluginEnv {
-	return PluginEnv{
-		Name:        os.Getenv("WAVE_PLUGIN_NAME"),
-		Version:     os.Getenv("WAVE_PLUGIN_VERSION"),
-		Dir:         os.Getenv("WAVE_PLUGIN_DIR"),
-		Assets:      os.Getenv("WAVE_PLUGIN_ASSETS"),
-		ProjectRoot: os.Getenv("WAVE_PROJECT_ROOT"),
-	}
+	return sdkenv.Get()
+}
+
+// GetVersion returns the project version from the Wavefile.
+// This reads the version from the [project] section of the nearest Wavefile.
+func GetVersion() (string, error) {
+	return sdkversion.GetProjectVersion()
+}
+
+// GetVersionFrom returns the project version from a Wavefile,
+// starting the search from the specified directory.
+func GetVersionFrom(startDir string) (string, error) {
+	return sdkversion.GetProjectVersionFrom(startDir)
+}
+
+// GetPluginVersion returns the current plugin version from WAVE_PLUGIN_VERSION.
+func GetPluginVersion() string {
+	return sdkversion.GetPluginVersion()
 }
 
 // Errf creates a new error with a formatted message.
 // This is a convenience wrapper around fmt.Errorf for plugin authors.
 // It supports all fmt.Errorf formatting verbs including %w for wrapping errors.
 func Errf(format string, args ...any) error {
+	return sdkerror.Errf(format, args...)
+}
+
+// NewConfig creates a Config from an existing map.
+// Useful for testing or constructing configs programmatically.
+func NewConfig(data map[string]any) *Config {
+	return sdkconfig.New(data)
+}
+
+// =============================================================================
+// Backwards Compatibility - Inline Config methods
+// =============================================================================
+
+// ConfigData provides backwards-compatible inline Config implementation
+// These are re-exported from the Config type alias
+
+// Raw returns the underlying configuration map.
+func Raw(c *Config) map[string]any {
+	return c.Raw()
+}
+
+// Get returns the value for key and whether it exists.
+func Get(c *Config, key string) (any, bool) {
+	return c.Get(key)
+}
+
+// Has returns true if key exists in the config.
+func Has(c *Config, key string) bool {
+	return c.Has(key)
+}
+
+// String returns the string value for key, or ("", false) if missing/wrong type.
+func String(c *Config, key string) (string, bool) {
+	return c.String(key)
+}
+
+// Bool returns the bool value for key, or (false, false) if missing/wrong type.
+func Bool(c *Config, key string) (bool, bool) {
+	return c.Bool(key)
+}
+
+// Float returns the float64 value for key, or (0, false) if missing/wrong type.
+func Float(c *Config, key string) (float64, bool) {
+	return c.Float(key)
+}
+
+// Map returns the map value for key, or (nil, false) if missing/wrong type.
+func Map(c *Config, key string) (map[string]any, bool) {
+	return c.Map(key)
+}
+
+// Keys returns all top-level keys in sorted order.
+func Keys(c *Config) []string {
+	keys := make([]string, 0, len(c.Raw()))
+	for k := range c.Raw() {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// Errf creates a new error with a formatted message (standalone function).
+func errf(format string, args ...any) error {
 	return fmt.Errorf(format, args...)
 }

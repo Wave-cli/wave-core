@@ -60,7 +60,7 @@ func TestReadConfigEmptyInput(t *testing.T) {
 // =============================================================================
 
 func TestConfigGetString(t *testing.T) {
-	cfg := &Config{data: map[string]any{"name": "hello"}}
+	cfg := NewConfig(map[string]any{"name": "hello"})
 	if v, ok := cfg.String("name"); !ok || v != "hello" {
 		t.Errorf("String('name') = %q, %v", v, ok)
 	}
@@ -71,7 +71,7 @@ func TestConfigGetString(t *testing.T) {
 
 func TestConfigGetMap(t *testing.T) {
 	inner := map[string]any{"cmd": "go build", "on_success": "echo done"}
-	cfg := &Config{data: map[string]any{"build": inner}}
+	cfg := NewConfig(map[string]any{"build": inner})
 
 	m, ok := cfg.Map("build")
 	if !ok {
@@ -83,7 +83,7 @@ func TestConfigGetMap(t *testing.T) {
 }
 
 func TestConfigGetMapMissing(t *testing.T) {
-	cfg := &Config{data: map[string]any{}}
+	cfg := NewConfig(map[string]any{})
 	_, ok := cfg.Map("missing")
 	if ok {
 		t.Error("Map('missing') should return false")
@@ -91,24 +91,24 @@ func TestConfigGetMapMissing(t *testing.T) {
 }
 
 func TestConfigGetBool(t *testing.T) {
-	cfg := &Config{data: map[string]any{"debug": true}}
+	cfg := NewConfig(map[string]any{"debug": true})
 	if v, ok := cfg.Bool("debug"); !ok || !v {
 		t.Errorf("Bool('debug') = %v, %v", v, ok)
 	}
 }
 
 func TestConfigGetFloat(t *testing.T) {
-	cfg := &Config{data: map[string]any{"port": float64(8080)}}
+	cfg := NewConfig(map[string]any{"port": float64(8080)})
 	if v, ok := cfg.Float("port"); !ok || v != 8080 {
 		t.Errorf("Float('port') = %v, %v", v, ok)
 	}
 }
 
 func TestConfigKeys(t *testing.T) {
-	cfg := &Config{data: map[string]any{
+	cfg := NewConfig(map[string]any{
 		"build": map[string]any{"cmd": "go build"},
 		"clean": map[string]any{"cmd": "rm -rf dist"},
-	}}
+	})
 	keys := cfg.Keys()
 	if len(keys) != 2 {
 		t.Fatalf("Keys() len = %d, want 2", len(keys))
@@ -116,7 +116,7 @@ func TestConfigKeys(t *testing.T) {
 }
 
 func TestConfigHas(t *testing.T) {
-	cfg := &Config{data: map[string]any{"build": "x"}}
+	cfg := NewConfig(map[string]any{"build": "x"})
 	if !cfg.Has("build") {
 		t.Error("Has('build') should be true")
 	}
@@ -126,7 +126,7 @@ func TestConfigHas(t *testing.T) {
 }
 
 func TestConfigGet(t *testing.T) {
-	cfg := &Config{data: map[string]any{"x": int64(42)}}
+	cfg := NewConfig(map[string]any{"x": int64(42)})
 	v, ok := cfg.Get("x")
 	if !ok {
 		t.Fatal("Get('x') should be true")
