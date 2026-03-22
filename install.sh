@@ -137,13 +137,14 @@ main() {
 
   select_http_client
 
-  local platform os arch asset_name release_json latest_tag download_url install_dir
-  local archive_path
+  local platform os arch asset_name bin_name release_json latest_tag download_url install_dir
+  local archive_path extracted_bin
 
   platform=$(detect_platform)
   os=$(echo "${platform}" | cut -d' ' -f1)
   arch=$(echo "${platform}" | cut -d' ' -f2)
   asset_name="wave-${os}-${arch}.tar.gz"
+  bin_name="wave-${os}-${arch}"
 
   echo "Checking for latest release..."
   release_json=$(fetch "${API_URL}")
@@ -168,8 +169,13 @@ main() {
   echo "Extracting..."
   tar -xzf "${archive_path}" -C "${tmp_dir}"
 
-  if [ ! -f "${tmp_dir}/wave" ]; then
-    die "Binary 'wave' not found in archive."
+  if [ -f "${tmp_dir}/${bin_name}" ]; then
+    extracted_bin="${tmp_dir}/${bin_name}"
+  elif [ -f "${tmp_dir}/wave" ]; then
+    # Backward compatibility for older archives.
+    extracted_bin="${tmp_dir}/wave"
+  else
+    die "Binary '${bin_name}' not found in archive."
   fi
 
   if [ ! -d "${install_dir}" ]; then
@@ -181,12 +187,12 @@ main() {
   fi
 
   if [ -w "${install_dir}" ]; then
-    chmod +x "${tmp_dir}/wave"
-    mv "${tmp_dir}/wave" "${install_dir}/wave"
+    chmod +x "${extracted_bin}"
+    mv "${extracted_bin}" "${install_dir}/wave"
   else
     echo "Requesting sudo to install..."
-    sudo chmod +x "${tmp_dir}/wave"
-    sudo mv "${tmp_dir}/wave" "${install_dir}/wave"
+    sudo chmod +x "${extracted_bin}"
+    sudo mv "${extracted_bin}" "${install_dir}/wave"
   fi
 
   echo -e "\n\033[0;32m✓ wave ${latest_tag} installed to ${install_dir}/wave\033[0m"
