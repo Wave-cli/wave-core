@@ -178,7 +178,7 @@ func Execute() {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintln(os.Stderr, errors.FormatCoreError(err))
 		os.Exit(1)
 	}
 }

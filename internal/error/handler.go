@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	coreErrorUnknownCommand = "core-unknown-command"
+	coreErrorExecution      = "core-command-error"
+)
+
 // ANSI color codes
 const (
 	colorRed   = "\033[31m"
@@ -26,6 +31,33 @@ func FormatError(pluginName, pluginVersion string, pe *PluginError, logPath stri
 		return formatDebugError(pe)
 	}
 	return formatSimpleError(pe)
+}
+
+// FormatCoreError renders a core (non-plugin) command error.
+// When WAVE_DEBUG=1, it returns a JSON payload.
+// Otherwise it returns a colored, user-friendly message.
+func FormatCoreError(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	message := err.Error()
+	code := coreErrorExecution
+	if strings.HasPrefix(message, "unknown command ") {
+		code = coreErrorUnknownCommand
+	}
+
+	if isDebugMode() {
+		payload := PluginError{
+			WaveError: true,
+			Code:      code,
+			Message:   message,
+		}
+		jsonBytes, _ := json.Marshal(payload)
+		return string(jsonBytes)
+	}
+
+	return fmt.Sprintf("%s%s: %s%s", colorRed, code, message, colorReset)
 }
 
 // formatSimpleError returns a colored, user-friendly error message.

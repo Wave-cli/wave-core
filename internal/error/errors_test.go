@@ -2,6 +2,7 @@ package errors
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -286,5 +287,33 @@ func TestFormatErrorSimpleModeWithoutDetails(t *testing.T) {
 		if strings.Contains(stripped, "\n") && strings.TrimSpace(strings.Split(stripped, "\n")[1]) != "" {
 			t.Errorf("Should not have content after first line when no details, got:\n%s", out)
 		}
+	}
+}
+
+func TestFormatCoreErrorSimpleUnknownCommand(t *testing.T) {
+	t.Setenv("WAVE_DEBUG", "")
+
+	err := errors.New("unknown command \"azd\" for \"wave\"")
+	out := FormatCoreError(err)
+
+	if !strings.Contains(out, "core-unknown-command: unknown command \"azd\" for \"wave\"") {
+		t.Errorf("simple mode should format unknown command, got:\n%s", out)
+	}
+}
+
+func TestFormatCoreErrorDebugModeReturnsJSON(t *testing.T) {
+	t.Setenv("WAVE_DEBUG", "1")
+
+	err := errors.New("unknown command \"azd\" for \"wave\"")
+	out := FormatCoreError(err)
+
+	if !strings.Contains(out, "\"wave_error\":true") {
+		t.Errorf("debug mode should return JSON, got:\n%s", out)
+	}
+	if !strings.Contains(out, "\"code\":\"core-unknown-command\"") {
+		t.Errorf("debug mode should include core code, got:\n%s", out)
+	}
+	if !strings.Contains(out, "unknown command \\\"azd\\\" for \\\"wave\\\"") {
+		t.Errorf("debug mode should include original message, got:\n%s", out)
 	}
 }
