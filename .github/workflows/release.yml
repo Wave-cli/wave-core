@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          COMMIT: ${{ steps.commit.outputs.COMMIT }}
+          DATE: ${{ steps.commit.outputs.DATE }}
+          MOD: github.com/wave-cli/wave-core
+        run: |
+          for os in linux darwin; do
+            for arch in amd64 arm64; do
+              name="wave-${os}-${arch}"
+              GOOS=${os} GOARCH=${arch} go build \
+                -ldflags "-X ${MOD}/internal/version.version=${VERSION} -X ${MOD}/internal/version.commit=${COMMIT} -X ${MOD}/internal/version.date=${DATE}" \
+                -o "${name}" .
+              tar -czf "wave-${os}-${arch}.tar.gz" "${name}"
+              rm -f "${name}"
+            done
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wave-*.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
