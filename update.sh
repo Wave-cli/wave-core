@@ -34,7 +34,9 @@ warn() {
 
 section "Building wave-core"
 cd "$WAVE_CORE"
-go build -ldflags "-X github.com/wave-cli/wave-core/internal/version.version=$(git describe --tags --always 2>/dev/null || echo 'dev') -X github.com/wave-cli/wave-core/internal/version.commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'none') -X github.com/wave-cli/wave-core/internal/version.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o wave .
+go clean
+VERSION=$(git describe --tags --always 2>/dev/null | sed 's/-[0-9]*-g.*//')
+go build -ldflags "-X github.com/wave-cli/wave-core/internal/version.version=${VERSION:-dev} -X github.com/wave-cli/wave-core/internal/version.commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'none') -X github.com/wave-cli/wave-core/internal/version.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o wave .
 success "Built: $WAVE_CORE/wave"
 
 # =============================================================================
@@ -87,7 +89,9 @@ esac
 
 section "Building wave-flow"
 cd "$WAVE_FLOW"
-go build -ldflags "-X github.com/wave-cli/wave-core/internal/version.version=$(git describe --tags --always 2>/dev/null || echo 'dev')" -o bin/flow .
+go clean
+VERSION=$(git describe --tags --always 2>/dev/null | sed 's/-[0-9]*-g.*//')
+go build -ldflags "-X github.com/wave-cli/wave-core/internal/version.version=${VERSION:-dev}" -o bin/flow .
 success "Built: $WAVE_FLOW/bin/flow"
 
 # =============================================================================

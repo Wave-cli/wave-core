@@ -4,6 +4,7 @@ package version
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -29,7 +30,7 @@ type Info struct {
 // Get returns the current build version info.
 func Get() Info {
 	return Info{
-		Version: version,
+		Version: normalizeVersion(version),
 		Commit:  commit,
 		Date:    date,
 	}
@@ -43,6 +44,22 @@ func (i Info) String() string {
 // Full returns a detailed version string including commit and date.
 func (i Info) Full() string {
 	return fmt.Sprintf("wave %s (commit: %s, built: %s)", i.Version, i.Commit, i.Date)
+}
+
+func normalizeVersion(v string) string {
+	v = strings.TrimSpace(v)
+	v = strings.TrimSuffix(v, "-dirty")
+
+	// Strip git-describe suffix: <tag>-<n>-g<sha>
+	// Examples:
+	//   v0.2.2-5-g7ba18fb -> v0.2.2
+	//   v0.2.2-beta.1-2-gabc1234 -> v0.2.2-beta.1
+	re := regexp.MustCompile(`^(.*)-\d+-g[0-9a-f]+$`)
+	if m := re.FindStringSubmatch(v); m != nil {
+		return m[1]
+	}
+
+	return v
 }
 
 // SatisfiesMin checks whether current >= minVersion using semver comparison.

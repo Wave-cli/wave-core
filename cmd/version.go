@@ -12,7 +12,7 @@ func NewVersionCmd() *cobra.Command {
 		Short: "Print wave version information",
 		Run: func(cmd *cobra.Command, args []string) {
 			info := version.Get()
-			cmd.Println(info.Full())
+			cmd.Println(info.String())
 		},
 	}
 }

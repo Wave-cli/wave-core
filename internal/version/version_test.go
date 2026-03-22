@@ -42,6 +42,12 @@ func TestFullFormat(t *testing.T) {
 	if !containsSubstring(full, info.Version) {
 		t.Errorf("Full() %q should contain version %q", full, info.Version)
 	}
+	if !containsSubstring(full, info.Commit) {
+		t.Errorf("Full() %q should contain commit %q", full, info.Commit)
+	}
+	if !containsSubstring(full, info.Date) {
+		t.Errorf("Full() %q should contain date %q", full, info.Date)
+	}
 }
 
 func TestSatisfiesMinVersion(t *testing.T) {
