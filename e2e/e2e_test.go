@@ -71,8 +71,8 @@ func setupFakeWaveHome(t *testing.T, echoBinPath string) (homeDir string, plugin
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
 	// Install fake plugin: wave-cli/echo v1.0.0
-	// Directory structure: plugins/<name> (single version, no org folder)
-	pluginDir := filepath.Join(pluginsDir, "echo")
+	// Directory structure: plugins/<org>/<name> (org/name structure)
+	pluginDir := filepath.Join(pluginsDir, "wave-cli", "echo")
 	binDir := filepath.Join(pluginDir, "bin")
 	assetsDir := filepath.Join(pluginDir, "assets")
 	os.MkdirAll(binDir, 0755)
@@ -416,8 +416,8 @@ func TestE2E_UninstallPlugin(t *testing.T) {
 	}
 
 	// Simulate uninstall: remove directory and update config
-	// Directory structure: plugins/<name> (no org folder)
-	pluginDir := filepath.Join(pluginsDir, "echo")
+	// Directory structure: plugins/<org>/<name>
+	pluginDir := filepath.Join(pluginsDir, "wave-cli", "echo")
 	os.RemoveAll(pluginDir)
 	delete(gc.Plugins, "wave-cli/echo")
 	config.WriteGlobalConfig(configPath, gc)
@@ -672,8 +672,8 @@ func setupFlowPlugin(t *testing.T, flowBinPath string) (homeDir string, pluginsD
 	pluginsDir = filepath.Join(homeDir, ".wave", "plugins")
 
 	// Install flow plugin: wave-cli/flow v0.2.0
-	// Directory structure: plugins/<name> (single version, no org folder)
-	pluginDir := filepath.Join(pluginsDir, "flow")
+	// Directory structure: plugins/<org>/<name> (org/name structure)
+	pluginDir := filepath.Join(pluginsDir, "wave-cli", "flow")
 	binDir := filepath.Join(pluginDir, "bin")
 	os.MkdirAll(binDir, 0755)
 
@@ -774,9 +774,9 @@ func TestE2E_FlowPluginUnknownCommand(t *testing.T) {
 	if result.ExitCode == 0 {
 		t.Error("Expected non-zero exit code for unknown command")
 	}
-	// Check stderr contains the error code (plain text format)
-	if !strings.Contains(result.Stderr, "flow-resolve-error") {
-		t.Errorf("Expected stderr to contain 'flow-resolve-error', got: %s", result.Stderr)
+	// Check stderr contains user-friendly error message
+	if !strings.Contains(result.Stderr, "command not found") {
+		t.Errorf("Expected stderr to contain 'command not found', got: %s", result.Stderr)
 	}
 	// Should suggest using --list
 	if !strings.Contains(result.Stderr, "wave flow --list") {
@@ -843,9 +843,9 @@ func TestE2E_FlowRulesValidation(t *testing.T) {
 	if result.ExitCode == 0 {
 		t.Error("Expected non-zero exit for unknown command")
 	}
-	// Check stderr contains the error code (plain text format)
-	if !strings.Contains(result.Stderr, "flow-resolve-error") {
-		t.Errorf("Expected stderr to contain 'flow-resolve-error', got: %s", result.Stderr)
+	// Check stderr contains user-friendly error message
+	if !strings.Contains(result.Stderr, "command not found") {
+		t.Errorf("Expected stderr to contain 'command not found', got: %s", result.Stderr)
 	}
 	// Should suggest using --list
 	if !strings.Contains(result.Stderr, "wave flow --list") {
