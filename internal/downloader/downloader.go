@@ -221,8 +221,8 @@ func (c *Client) InstallPlugin(org, name, version, pluginsDir string) error {
 		return fmt.Errorf("selecting binary: %w", err)
 	}
 
-	// 3. Set up directories - now directly under plugins/<name>
-	pluginDir := filepath.Join(pluginsDir, name)
+	// 3. Set up directories - now under plugins/<org>/<name>
+	pluginDir := filepath.Join(pluginsDir, org, name)
 	binDir := filepath.Join(pluginDir, "bin")
 	assetsDir := filepath.Join(pluginDir, "assets")
 	if err := os.MkdirAll(binDir, 0755); err != nil {
