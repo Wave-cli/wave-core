@@ -301,14 +301,14 @@ creator = "wave-cli"
 		t.Fatalf("InstallPlugin failed: %v", err)
 	}
 
-	// Verify binary exists - now directly under plugins/<name>/bin/<name>
-	binPath := filepath.Join(pluginsDir, "flow", "bin", "flow")
+	// Verify binary exists - now under plugins/<org>/<name>/bin/<name>
+	binPath := filepath.Join(pluginsDir, "wave-cli", "flow", "bin", "flow")
 	if _, err := os.Stat(binPath); os.IsNotExist(err) {
 		t.Error("Binary should be installed")
 	}
 
 	// Verify Waveplugin exists
-	wpPath := filepath.Join(pluginsDir, "flow", "Waveplugin")
+	wpPath := filepath.Join(pluginsDir, "wave-cli", "flow", "Waveplugin")
 	if _, err := os.Stat(wpPath); os.IsNotExist(err) {
 		t.Error("Waveplugin should be installed")
 	}

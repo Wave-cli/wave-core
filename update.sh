@@ -16,16 +16,16 @@ WAVE_CORE="$SCRIPT_DIR"
 WAVE_FLOW="$SCRIPT_DIR/../wave-flow"
 
 section() {
-    echo ""
-    echo -e "${YELLOW}=== $1 ===${NC}"
+  echo ""
+  echo -e "${YELLOW}=== $1 ===${NC}"
 }
 
 success() {
-    echo -e "${GREEN}✓${NC} $1"
+  echo -e "${GREEN}✓${NC} $1"
 }
 
 warn() {
-    echo -e "${YELLOW}⚠${NC} $1"
+  echo -e "${YELLOW}⚠${NC} $1"
 }
 
 # =============================================================================
@@ -47,40 +47,39 @@ section "Installing wave"
 
 # Determine install directory
 if [ "$(uname -s)" = "Darwin" ]; then
-    INSTALL_DIR="/usr/local/bin"
+  INSTALL_DIR="/usr/local/bin"
 else
-    INSTALL_DIR="$HOME/.local/bin"
+  INSTALL_DIR="$HOME/.local/bin"
 fi
 
 # Create directory if needed
 if [ ! -d "$INSTALL_DIR" ]; then
-    if [ -w "$(dirname "$INSTALL_DIR")" ]; then
-        mkdir -p "$INSTALL_DIR"
-    else
-        warn "Need sudo to create $INSTALL_DIR"
-        sudo mkdir -p "$INSTALL_DIR"
-    fi
+  if [ -w "$(dirname "$INSTALL_DIR")" ]; then
+    mkdir -p "$INSTALL_DIR"
+  else
+    warn "Need sudo to create $INSTALL_DIR"
+    sudo mkdir -p "$INSTALL_DIR"
+  fi
 fi
 
 # Install wave
 if [ -w "$INSTALL_DIR" ]; then
-    chmod +x "$WAVE_CORE/wave"
-    cp "$WAVE_CORE/wave" "$INSTALL_DIR/wave"
+  chmod +x "$WAVE_CORE/wave"
+  cp "$WAVE_CORE/wave" "$INSTALL_DIR/wave"
 else
-    warn "Need sudo to install to $INSTALL_DIR"
-    sudo chmod +x "$WAVE_CORE/wave"
-    sudo cp "$WAVE_CORE/wave" "$INSTALL_DIR/wave"
+  warn "Need sudo to install to $INSTALL_DIR"
+  sudo chmod +x "$WAVE_CORE/wave"
+  sudo cp "$WAVE_CORE/wave" "$INSTALL_DIR/wave"
 fi
 
 success "Installed to: $INSTALL_DIR/wave"
 
 # Check if PATH includes install dir
 case ":${PATH}:" in
-*":${INSTALL_DIR}:"*)
-    ;;
+*":${INSTALL_DIR}:"*) ;;
 *)
-    warn "Add $INSTALL_DIR to your PATH"
-    ;;
+  warn "Add $INSTALL_DIR to your PATH"
+  ;;
 esac
 
 # =============================================================================
@@ -103,7 +102,7 @@ section "Installing wave-flow plugin"
 FLOW_VERSION=$(grep 'version = ' "$WAVE_FLOW/Waveplugin" | tr -d '"' | awk '{print $3}')
 success "Flow version: $FLOW_VERSION"
 
-PLUGIN_DIR="$HOME/.wave/plugins/flow"
+PLUGIN_DIR="$HOME/.wave/plugins/wave-cli/flow"
 mkdir -p "$PLUGIN_DIR/bin"
 
 cp "$WAVE_FLOW/bin/flow" "$PLUGIN_DIR/bin/flow"
@@ -120,29 +119,29 @@ section "Updating config"
 WAVE_CONFIG="$HOME/.wave/config"
 
 if [ ! -f "$WAVE_CONFIG" ]; then
-    mkdir -p "$HOME/.wave"
-    cat > "$WAVE_CONFIG" << 'EOF'
+  mkdir -p "$HOME/.wave"
+  cat >"$WAVE_CONFIG" <<'EOF'
 [core]
 logs_dir = "~/.wave/logs"
 
 [plugins]
-  "flow/flow" = "local"
+  "wave-cli/flow" = "local"
 EOF
-    success "Created config: $WAVE_CONFIG"
+  success "Created config: $WAVE_CONFIG"
 else
-    # Check if flow is already registered
-    if grep -qE '^\s*"flow/flow"\s*=' "$WAVE_CONFIG" || grep -qE '^\s*"flow"\s*=' "$WAVE_CONFIG"; then
-        success "Flow already in config"
+  # Check if flow is already registered
+  if grep -qE '^\s*"flow/flow"\s*=' "$WAVE_CONFIG" || grep -qE '^\s*"flow"\s*=' "$WAVE_CONFIG"; then
+    success "Flow already in config"
+  else
+    if grep -q '\[plugins\]' "$WAVE_CONFIG"; then
+      sed -i '/\[plugins\]/a\  "wave-cli/flow" = "local"' "$WAVE_CONFIG"
+      success "Added flow to plugins"
     else
-        if grep -q '\[plugins\]' "$WAVE_CONFIG"; then
-            sed -i '/\[plugins\]/a\  "flow/flow" = "local"' "$WAVE_CONFIG"
-            success "Added flow to plugins"
-        else
-            echo '[plugins]' >> "$WAVE_CONFIG"
-            echo '  "flow/flow" = "local"' >> "$WAVE_CONFIG"
-            success "Added plugins section"
-        fi
+      echo '[plugins]' >>"$WAVE_CONFIG"
+      echo '  "wave-cli/flow" = "local"' >>"$WAVE_CONFIG"
+      success "Added plugins section"
     fi
+  fi
 fi
 
 # =============================================================================

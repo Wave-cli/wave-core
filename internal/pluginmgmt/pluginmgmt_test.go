@@ -148,8 +148,8 @@ func TestResolveBinaryPath(t *testing.T) {
 	home := t.TempDir()
 	pluginsDir := filepath.Join(home, ".wave", "plugins")
 
-	// Create: plugins/flow/bin/flow (no org folder)
-	binDir := filepath.Join(pluginsDir, "flow", "bin")
+	// Create: plugins/wave-cli/flow/bin/flow (org/name structure)
+	binDir := filepath.Join(pluginsDir, "wave-cli", "flow", "bin")
 	os.MkdirAll(binDir, 0755)
 	binPath := filepath.Join(binDir, "flow")
 	os.WriteFile(binPath, []byte("#!/bin/sh\necho ok"), 0755)
@@ -160,7 +160,7 @@ func TestResolveBinaryPath(t *testing.T) {
 		t.Fatalf("ResolveBinary failed: %v", err)
 	}
 
-	expected := filepath.Join(pluginsDir, "flow", "bin", "flow")
+	expected := filepath.Join(pluginsDir, "wave-cli", "flow", "bin", "flow")
 	if resolved != expected {
 		t.Errorf("resolved = %q, want %q", resolved, expected)
 	}
@@ -182,8 +182,8 @@ func TestResolveAssetsPath(t *testing.T) {
 	home := t.TempDir()
 	pluginsDir := filepath.Join(home, ".wave", "plugins")
 
-	// Create: plugins/flow/assets/ (no org folder)
-	assetsDir := filepath.Join(pluginsDir, "flow", "assets")
+	// Create: plugins/wave-cli/flow/assets/ (org/name structure)
+	assetsDir := filepath.Join(pluginsDir, "wave-cli", "flow", "assets")
 	os.MkdirAll(assetsDir, 0755)
 
 	reg := NewRegistry(pluginsDir)
@@ -192,7 +192,7 @@ func TestResolveAssetsPath(t *testing.T) {
 		t.Fatalf("ResolveAssets failed: %v", err)
 	}
 
-	expected := filepath.Join(pluginsDir, "flow", "assets")
+	expected := filepath.Join(pluginsDir, "wave-cli", "flow", "assets")
 	if resolved != expected {
 		t.Errorf("resolved = %q, want %q", resolved, expected)
 	}
@@ -202,8 +202,8 @@ func TestResolveWavepluginPath(t *testing.T) {
 	home := t.TempDir()
 	pluginsDir := filepath.Join(home, ".wave", "plugins")
 
-	// Create: plugins/flow/Waveplugin (no org folder)
-	pluginDir := filepath.Join(pluginsDir, "flow")
+	// Create: plugins/wave-cli/flow/Waveplugin (org/name structure)
+	pluginDir := filepath.Join(pluginsDir, "wave-cli", "flow")
 	os.MkdirAll(pluginDir, 0755)
 	wpPath := filepath.Join(pluginDir, "Waveplugin")
 	os.WriteFile(wpPath, []byte("[plugin]\nname=\"flow\"\nversion=\"1.0.0\"\ndescription=\"test\"\ncreator=\"x\"\n"), 0644)

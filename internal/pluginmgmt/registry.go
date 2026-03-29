@@ -7,7 +7,7 @@ import (
 )
 
 // Registry manages installed plugins under a plugins directory.
-// Layout: <pluginsDir>/<name>/bin/<name>
+// Layout: <pluginsDir>/<org>/<name>/bin/<name>
 type Registry struct {
 	pluginsDir string
 }
@@ -25,15 +25,15 @@ func NewRegistry(pluginsDir string) *Registry {
 }
 
 // ResolveBinary returns the absolute path to the installed plugin binary:
-// <pluginsDir>/<name>/bin/<name>.
+// <pluginsDir>/<org>/<name>/bin/<name>.
 func (r *Registry) ResolveBinary(fullName string) (string, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
 		return "", err
 	}
 
-	// Use only the plugin name, not org/name
-	binPath := filepath.Join(r.pluginsDir, ref.Name, "bin", ref.Name)
+	// Use org/name structure
+	binPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "bin", ref.Name)
 
 	if _, err := os.Stat(binPath); err != nil {
 		return "", fmt.Errorf("plugin %q not installed: %w", fullName, err)
@@ -43,15 +43,15 @@ func (r *Registry) ResolveBinary(fullName string) (string, error) {
 }
 
 // ResolveAssets returns the path to the plugin's assets directory:
-// <pluginsDir>/<name>/assets.
+// <pluginsDir>/<org>/<name>/assets.
 func (r *Registry) ResolveAssets(fullName string) (string, error) {
 	ref, err := ParsePluginRef(fullName)
 	if err != nil {
 		return "", err
 	}
 
-	// Use only the plugin name, not org/name
-	assetsPath := filepath.Join(r.pluginsDir, ref.Name, "assets")
+	// Use org/name structure
+	assetsPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "assets")
 
 	if _, err := os.Stat(assetsPath); err != nil {
 		return "", fmt.Errorf("plugin %q assets not found: %w", fullName, err)
@@ -68,8 +68,8 @@ func (r *Registry) ReadWaveplugin(fullName string) (*Waveplugin, error) {
 		return nil, err
 	}
 
-	// Use only the plugin name, not org/name
-	wpPath := filepath.Join(r.pluginsDir, ref.Name, "Waveplugin")
+	// Use org/name structure
+	wpPath := filepath.Join(r.pluginsDir, ref.Org, ref.Name, "Waveplugin")
 	return ParseWaveplugin(wpPath)
 }
 
