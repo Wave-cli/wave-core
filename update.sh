@@ -103,7 +103,7 @@ section "Installing wave-flow plugin"
 FLOW_VERSION=$(grep 'version = ' "$WAVE_FLOW/Waveplugin" | tr -d '"' | awk '{print $3}')
 success "Flow version: $FLOW_VERSION"
 
-PLUGIN_DIR="$HOME/.wave/plugins/flow"
+PLUGIN_DIR="$HOME/.wave/plugins/wave-cli/flow"
 mkdir -p "$PLUGIN_DIR/bin"
 
 cp "$WAVE_FLOW/bin/flow" "$PLUGIN_DIR/bin/flow"
