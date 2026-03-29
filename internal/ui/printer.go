@@ -30,9 +30,15 @@ func NewPrinter(out io.Writer, level Level) *Printer {
 	return &Printer{out: out, level: level}
 }
 
+// ANSI color codes
+const (
+	colorRed   = "\033[31m"
+	colorReset = "\033[0m"
+)
+
 // Error always prints (all levels including quiet).
 func (p *Printer) Error(format string, args ...any) {
-	fmt.Fprintf(p.out, "ERROR: "+format+"\n", args...)
+	fmt.Fprintf(p.out, colorRed+"ERROR:"+colorReset+" "+format+"\n", args...)
 }
 
 // Warn prints at normal level and above.
@@ -220,12 +226,28 @@ type Spinner struct {
 }
 
 // NewSpinner creates a new spinner with the given message.
+// Uses ASCII wave animation inspired by ocean waves.
 func NewSpinner(out io.Writer, message string) *Spinner {
 	return &Spinner{
-		out:      out,
-		message:  message,
-		frames:   []string{"_.-^-._", ".-^-._-", "-^-._.-", "^-._.-^", "-._.-^-", "._.-^-.", "_.-^-._"},
-		interval: 80 * time.Millisecond,
+		out:     out,
+		message: message,
+		frames: []string{
+			"~~~~~~~",
+			"≈~~~~~~",
+			"~≈~~~~~",
+			"~~≈~~~~",
+			"~~~≈~~~",
+			"~~~~≈~~",
+			"~~~~~≈~",
+			"~~~~~~≈",
+			"~~~~~≈~",
+			"~~~~≈~~",
+			"~~~≈~~~",
+			"~~≈~~~~",
+			"~≈~~~~~",
+			"≈~~~~~~",
+		},
+		interval: 100 * time.Millisecond,
 		stopCh:   make(chan struct{}),
 		doneCh:   make(chan struct{}),
 	}
